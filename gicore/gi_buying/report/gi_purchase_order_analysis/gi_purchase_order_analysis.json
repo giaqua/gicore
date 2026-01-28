@@ -1,5 +1,5 @@
 {
- "add_total_row": 0,
+ "add_total_row": 1,
  "add_translate_data": 0,
  "columns": [],
  "creation": "2026-01-28 11:49:00.131706",
@@ -10,7 +10,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": null,
- "modified": "2026-01-28 11:49:00.131706",
+ "modified": "2026-01-28 11:51:18.406507",
  "modified_by": "Administrator",
  "module": "GI Buying",
  "name": "GI Purchase Order Analysis",
