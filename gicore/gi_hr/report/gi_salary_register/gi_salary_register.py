@@ -36,11 +36,15 @@ def execute(filters=None):
 
 	data = []
 	for ss in salary_slips:
+		employee_data = frappe.get_doc("Employee", ss.employee)
 		row = {
 			"salary_slip_id": ss.name,
 			"employee": ss.employee,
 			"employee_name": ss.employee_name,
 			"data_of_joining": doj_map.get(ss.employee),
+			"bank_ac_no":employee_data.bank_ac_no,
+			"bank_code":employee_data.custom_bank_code,
+			"id_number":employee_data.custom_id_number,
 			"branch": ss.branch,
 			"department": ss.department,
 			"designation": ss.designation,
@@ -217,11 +221,28 @@ def get_columns(earning_types, ded_types,filters):
 	else:	
 		columns = [
 			{
+				"label": _("Employee Id/Iqama"),
+				"fieldname": "id_number",
+				"fieldtype": "Data",
+			},
+			{
+			"label": _("Bank Account No"),
+			"fieldname": "bank_ac_no",
+			"fieldtype": "Data",		
+			"width":190,
+			},
+			{
 			"label": _("Employee Name"),
 			"fieldname": "employee_name",
 			"fieldtype": "Data",
 			"width": 200,
-		},
+			},
+			{
+				"label": _("Bank Code"),
+				"fieldname": "bank_code",
+				"fieldtype": "Data",
+				"width":60,
+			}
 		]
 
 	# for earning in earning_types:
@@ -369,7 +390,8 @@ def get_employee_doj_map():
 	employee = frappe.qb.DocType("Employee")
 
 	result = (frappe.qb.from_(employee).select(employee.name, employee.date_of_joining)).run()
-
+	# , employee.custom_id_number,employee.bank_ac_no,employee.custom_bank_code
+	print("result", result,"========================",frappe._dict(result))
 	return frappe._dict(result)
 
 
