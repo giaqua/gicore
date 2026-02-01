@@ -1,0 +1,28 @@
+{
+ "add_total_row": 1,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2026-01-29 13:29:28.650235",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": null,
+ "modified": "2026-02-01 10:00:09.752937",
+ "modified_by": "Administrator",
+ "module": "GI HR",
+ "name": "GI Salary Register",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Salary Slip",
+ "report_name": "GI Salary Register",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "HR Manager"
+  }
+ ],
+ "timeout": 0
+}
