@@ -1,3 +1,4 @@
 GI Core
 GI Buying
 GI Support
+GI HR
