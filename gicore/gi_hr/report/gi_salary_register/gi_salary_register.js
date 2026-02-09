@@ -78,5 +78,11 @@ frappe.query_reports["GI Salary Register"] = {
 			fieldtype: "Check",
 			default: 0,
 		},
+		{
+			fieldname: "show_deductions",
+			label: __("Show Deductions"),
+			fieldtype: "Check",
+			default: 0,
+		},
 	],
 };

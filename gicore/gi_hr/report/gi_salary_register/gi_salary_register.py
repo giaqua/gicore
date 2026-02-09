@@ -289,27 +289,28 @@ def get_columns(earning_types, ded_types,filters):
 		# }
 		]
 	)
-
-	# for deduction in ded_types:
-	# 	columns.append(
-	# 		{
-	# 			"label": deduction,
-	# 			"fieldname": frappe.scrub(deduction),
-	# 			"fieldtype": "Currency",
-	# 			"options": "currency",
-	# 			"width": 120,
-	# 		}
-	# 	)
+	if filters.get("show_deductions"):
+		for deduction in ded_types:
+			columns.append(
+				{
+					"label": deduction,
+					"fieldname": frappe.scrub(deduction),
+					"fieldtype": "Currency",
+					"options": "currency",
+					"width": 120,
+				}
+			)
+		
+		columns.append({
+				"label": _("Loan Repayment"),
+				"fieldname": "total_loan_repayment",
+				"fieldtype": "Currency",
+				"options": "currency",
+				"width": 120,
+			})
 
 	columns.extend(
 		[
-			# {
-			# 	"label": _("Loan Repayment"),
-			# 	"fieldname": "total_loan_repayment",
-			# 	"fieldtype": "Currency",
-			# 	"options": "currency",
-			# 	"width": 120,
-			# },
 			{
 				"label": _("Deduction"),
 				"fieldname": "total_deduction",
