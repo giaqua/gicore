@@ -89,7 +89,7 @@ frappe.query_reports["GI Purchase Order Analysis"] = {
 			fieldname: "group_by_po",
 			label: __("Group by Purchase Order"),
 			fieldtype: "Check",
-			default: 0,
+			default: 1,
 		},
 		{
 			fieldname: "hide_qty",

@@ -57,6 +57,7 @@ def get_data(filters):
 			po_item.received_qty,
 			(po_item.qty - po_item.received_qty).as_("pending_qty"),
 			Sum(IfNull(pi_item.qty, 0)).as_("billed_qty"),
+			pi_item.parent.as_("purchase_invoice"),
 			po_item.base_amount.as_("amount"),
 			(po_item.billed_amt * IfNull(po.conversion_rate, 1)).as_("billed_amount"),
 			(po_item.base_amount - (po_item.billed_amt * IfNull(po.conversion_rate, 1))).as_(
@@ -176,9 +177,9 @@ def prepare_data(data, filters):
 	if filters.get("group_by_po"):
 		data = []
 		for po in purchase_order_map:
-			print("po", po,"==============",purchase_order_map)
+			# print("po", po,"==============",purchase_order_map)
 			data.append(purchase_order_map[po])
-			purchase_order_map[po].update({"purchase_invoice": "bbbbbbbb"})  # add a blank row after each PO
+			# purchase_order_map[po].update({"purchase_invoice": po.purchase_invoice if po.purchase_invoice else ""})  # add a blank row after each PO
 		return data, chart_data
 
 	return data, chart_data
@@ -197,7 +198,7 @@ def prepare_chart_data(pending, completed):
 def get_columns(filters):
 	columns = [
 		{"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 90},
-		{"label": _("Required By"), "fieldname": "required_date", "fieldtype": "Date", "width": 90},
+		# {"label": _("Required By"), "fieldname": "required_date", "fieldtype": "Date", "width": 90},
 		{
 			"label": _("Purchase Order"),
 			"fieldname": "purchase_order",
@@ -243,19 +244,19 @@ def get_columns(filters):
 					"convertible": "rate",
 				},
 				{
-				"label": _("Purchase Invoice"),
-				"fieldname": "purchase_invoice",
-				"fieldtype": "Link",
-				"options": "Purchase Invoice",
-				"width": 160,
-				},
-				{
 					"label": _("Billed Amount"),
 					"fieldname": "billed_amount",
 					"fieldtype": "Currency",
 					"width": 110,
 					"options": "Company:company:default_currency",
 					"convertible": "rate",
+				},
+				{
+				"label": _("Purchase Invoice"),
+				"fieldname": "purchase_invoice",
+				"fieldtype": "Link",
+				"options": "Purchase Invoice",
+				"width": 160,
 				},
 				{
 					"label": _("Pending Amount"),
