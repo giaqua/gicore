@@ -1,0 +1,251 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:CNT-{contract_date}-{#}",
+ "creation": "2026-04-12 16:21:37.304599",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_reik",
+  "amended_from",
+  "party_type",
+  "is_signed",
+  "contract_date",
+  "column_break_sukf",
+  "party_name",
+  "party_user",
+  "status",
+  "fulfilment_status",
+  "party_full_name",
+  "section_break_ynoo",
+  "start_date",
+  "column_break_ynhd",
+  "end_date",
+  "signee_details_section",
+  "signee",
+  "signed_on",
+  "column_break_lsbg",
+  "ip_address",
+  "contract_details_section",
+  "contract_template",
+  "contract_terms",
+  "fulfilment_details_section",
+  "requires_fulfilment",
+  "fulfilment_deadline",
+  "fulfilment_terms",
+  "section_break_whkb",
+  "signee_company",
+  "signed_by_company",
+  "section_break_qrpg",
+  "document_type",
+  "document_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_reik",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Company Contract",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Select",
+   "label": "Party Type",
+   "options": "Customer\nSupplier\nEmployee\nRelated Party"
+  },
+  {
+   "fieldname": "party_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Party Name",
+   "options": "party_type"
+  },
+  {
+   "fieldname": "party_user",
+   "fieldtype": "Link",
+   "label": "Party User",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_sukf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Unsigned\nActive\nInactivea"
+  },
+  {
+   "fieldname": "fulfilment_status",
+   "fieldtype": "Select",
+   "label": "Fulfilment Status"
+  },
+  {
+   "fieldname": "party_full_name",
+   "fieldtype": "Data",
+   "label": "Party Full Name"
+  },
+  {
+   "fieldname": "section_break_ynoo",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_ynhd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "signee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Signee Details"
+  },
+  {
+   "fieldname": "signee",
+   "fieldtype": "Data",
+   "label": "Signee"
+  },
+  {
+   "fieldname": "signed_on",
+   "fieldtype": "Datetime",
+   "label": "Signed On"
+  },
+  {
+   "fieldname": "column_break_lsbg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP Address"
+  },
+  {
+   "fieldname": "contract_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contract Details"
+  },
+  {
+   "fieldname": "contract_template",
+   "fieldtype": "Link",
+   "label": "Contract Template",
+   "options": "Contract Template"
+  },
+  {
+   "fieldname": "contract_terms",
+   "fieldtype": "Text Editor",
+   "label": "Contract Terms"
+  },
+  {
+   "fieldname": "fulfilment_details_section",
+   "fieldtype": "Section Break",
+   "label": "Fulfilment Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_fulfilment",
+   "fieldtype": "Check",
+   "label": "Requires Fulfilment"
+  },
+  {
+   "fieldname": "fulfilment_deadline",
+   "fieldtype": "Date",
+   "label": "Fulfilment Deadline"
+  },
+  {
+   "fieldname": "fulfilment_terms",
+   "fieldtype": "Table",
+   "label": "Fulfilment Terms",
+   "options": "Contract Fulfilment Checklist"
+  },
+  {
+   "fieldname": "section_break_whkb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "signee_company",
+   "fieldtype": "Signature",
+   "label": "Signee (Company)"
+  },
+  {
+   "fieldname": "signed_by_company",
+   "fieldtype": "Link",
+   "label": "Signed By (Company)",
+   "options": "Company"
+  },
+  {
+   "fieldname": "section_break_qrpg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "label": "Document Type",
+   "options": "\nQuotation\nProject\nSales Order\nPurchase Order\nSales Invoice\nPurchase Invoice"
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Document Name",
+   "options": "document_type"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_signed",
+   "fieldtype": "Check",
+   "label": "Signed"
+  },
+  {
+   "fieldname": "contract_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Contract Date",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-13 09:51:22.274504",
+ "modified_by": "Administrator",
+ "module": "GI Core",
+ "name": "Company Contract",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
