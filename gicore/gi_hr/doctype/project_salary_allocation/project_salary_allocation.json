@@ -1,0 +1,99 @@
+{
+ "actions": [],
+ "autoname": "format:PSA-{#}",
+ "creation": "2026-05-06 09:40:24.895112",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_s0qa",
+  "amended_from",
+  "from_date",
+  "to_date",
+  "column_break_esox",
+  "posting_date",
+  "section_break_uken",
+  "project_salary_allocation_employee",
+  "project_salary_allocation_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_s0qa",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Project Salary Allocation",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
+  },
+  {
+   "fieldname": "section_break_uken",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "project_salary_allocation_employee",
+   "fieldtype": "Table",
+   "label": "Project Salary Allocation Employee",
+   "options": "Project Salary Allocation Employee"
+  },
+  {
+   "fieldname": "project_salary_allocation_details",
+   "fieldtype": "Table",
+   "label": "Project Salary Allocation Details",
+   "options": "Project Salary Allocation Details"
+  },
+  {
+   "fieldname": "column_break_esox",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-05-06 09:55:54.896703",
+ "modified_by": "Administrator",
+ "module": "GI HR",
+ "name": "Project Salary Allocation",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
