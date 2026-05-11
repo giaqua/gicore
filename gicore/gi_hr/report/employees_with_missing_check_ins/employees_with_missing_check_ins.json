@@ -1,0 +1,31 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2026-05-11 11:29:41.772476",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": null,
+ "modified": "2026-05-11 11:29:41.772476",
+ "modified_by": "Administrator",
+ "module": "GI HR",
+ "name": "Employees with Missing Check-ins",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Employee Checkin",
+ "report_name": "Employees with Missing Check-ins",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "HR User"
+  },
+  {
+   "role": "HR Manager"
+  }
+ ],
+ "timeout": 0
+}
