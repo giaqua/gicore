@@ -42,6 +42,12 @@ frappe.query_reports["Employees with Missing Check-ins"] = {
 			"fieldtype": "Select",
 			"options": "All\nCheck-out\nCheck-in & Check-out",
 			"default": "All"
+		},
+		{
+			"fieldname": "include_no_checkin_required",
+			"label": __("Include Employees with No Check-in Required"),
+			"fieldtype": "Check",
+			"default": 0
 		}
 
 	]

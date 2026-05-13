@@ -80,6 +80,9 @@ def get_conditions(filters):
     
     if filters.get("employee"):
         conditions += " AND emp.name = %(employee)s"
+
+    if not filters.get("include_no_checkin_required"):
+        conditions += " AND (emp.custom_no_checkin_required = 0 OR emp.custom_no_checkin_required IS NULL)"
     
     return conditions
 
