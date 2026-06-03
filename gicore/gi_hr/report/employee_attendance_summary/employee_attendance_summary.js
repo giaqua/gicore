@@ -63,6 +63,16 @@ frappe.query_reports["Employee Attendance Summary"] = {
 			fieldtype: "Float",
 			description: __("Show employees whose total hours are less than this value"),
 		},
+		{
+			fieldname: "friday",
+			label: __("Friday"),
+			fieldtype: "Check",
+		},
+		{
+			fieldname: "saturday",
+			label: __("Saturday"),
+			fieldtype: "Check",
+		}
 	],
 
 	// ── Custom Print button ──────────────────────────────────────────────────

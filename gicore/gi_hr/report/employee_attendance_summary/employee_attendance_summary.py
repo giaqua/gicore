@@ -30,7 +30,7 @@ def execute(filters=None):
         frappe.throw(_("Date range cannot exceed 30 days."))
 
     date_list = build_date_list(from_date, to_date)
-    columns = get_columns(date_list)
+    columns = get_columns(date_list,filters)
 
     employees = get_employees(filters)
     if not employees:
@@ -365,7 +365,7 @@ def build_date_list(from_date, to_date):
     return date_list
 
 
-def get_columns(date_list):
+def get_columns(date_list,filters):
     columns = [
         {
             "fieldname": "employee",
@@ -391,6 +391,16 @@ def get_columns(date_list):
     for d in date_list:
         weekday = WEEKDAY_NAMES[d.weekday()]
         col_label = f"{weekday[:3]}{d.strftime('%d-%m')}"
+        print(f"Adding column for {col_label}...{weekday}")  # Debug log
+
+        if not filters.get("friday") and weekday == "Friday":
+            continue
+        if not filters.get("saturday") and weekday == "Saturday":
+            continue
+        
+        if weekday in ["Saturday", "Friday"]:
+            col_label = f"<span style='color:#e74c3c;'>{col_label}</span>"
+            
         columns.append(
             {
                 "fieldname": f"day_{d.strftime('%Y%m%d')}",
@@ -488,6 +498,7 @@ def build_data(employees, date_list, checkin_map, filters):
         for d in date_list:
             field = f"day_{d.strftime('%Y%m%d')}"
             date_str = str(d)
+            # print(f"Processing {emp.name} on {date_str}...{field}")  # Debug log
             emp_day = checkin_map.get(emp.name, {}).get(date_str)
 
             if emp_day is None:
