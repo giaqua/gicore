@@ -208,3 +208,10 @@ def create_task(subject, project="", task_type="", priority="Medium", descriptio
     doc.insert(ignore_permissions=False)
     frappe.db.commit()
     return {"name": doc.name, "subject": doc.subject}
+
+
+@frappe.whitelist()
+def add_comment(task_name, comment):
+    task = frappe.get_doc("Task", task_name)
+    task.add_comment(text=comment)
+    return {"success": True}
