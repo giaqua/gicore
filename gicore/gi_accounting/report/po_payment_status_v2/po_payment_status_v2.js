@@ -53,7 +53,7 @@ frappe.query_reports["PO Payment Status V2"] = {
 			fieldname: "status",
 			label: __("Status"),
 			fieldtype: "Select",
-			options: "\nFully Paid\nNot Paid",
+			options: "\nFully Paid\nPartially Paid\nNot Paid",
 			default: "Not Paid",
 		},
 		{
@@ -70,6 +70,12 @@ frappe.query_reports["PO Payment Status V2"] = {
 				return q;
 			},
 		},
+		{
+			"fieldname": "show_vat",
+			"label": __("Show VAT"),
+			"fieldtype": "Check",
+			"default": 0
+		}
 	],
 
 	// ── Colour-code the Status column ────────────────────────────────────────
@@ -81,6 +87,8 @@ frappe.query_reports["PO Payment Status V2"] = {
 				value = `<span style="color: green; font-weight: bold;">${data.status}</span>`;
 			} else if (data && data.status === "Not Paid") {
 				value = `<span style="color: #c00; font-weight: bold;">${data.status}</span>`;
+			}else if (data && data.status === "Partially Paid") {
+				value = `<span style="color: orange; font-weight: bold;">${data.status}</span>`;
 			}
 		}
 

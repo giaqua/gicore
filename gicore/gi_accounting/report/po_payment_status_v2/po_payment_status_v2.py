@@ -12,13 +12,13 @@ from frappe.utils import flt
 
 def execute(filters=None):
     filters = filters or {}
-    columns = get_columns()
+    columns = get_columns(filters)
     data = get_data(filters)
     return columns, data
 
 
-def get_columns():
-    return [
+def get_columns(filters=None):
+    columns = [
         {
             "label": _("Purchase Order"),
             "fieldname": "purchase_order",
@@ -45,76 +45,81 @@ def get_columns():
             "fieldtype": "Data",
             "width": 180,
         },
-        # {
-        #     "label": _("Supplier Group"),
-        #     "fieldname": "supplier_group",
-        #     "fieldtype": "Link",
-        #     "options": "Supplier Group",
-        #     "width": 130,
-        # },
-        # {
-        #     "label": _("Company"),
-        #     "fieldname": "company",
-        #     "fieldtype": "Link",
-        #     "options": "Company",
-        #     "width": 130,
-        # },
         {
-            "label": _("PO Amount"),
-            "fieldname": "po_amount",
-            "fieldtype": "Currency",
-            "options": "currency",
-            "width": 130,
+            "label": _("PO Currency"),
+            "fieldname": "po_currency",
+            "fieldtype": "Link",
+            "options": "Currency",
+            "width": 100,
         },
         {
-            "label": _("Invoiced Amount"),
+            "label": _("PO Amount (PO Currency)"),
+            "fieldname": "po_amount",
+            "fieldtype": "Currency",
+            "options": "po_currency",
+            "width": 130,
+        }
+    ]
+
+    if filters.get("show_vat"):
+        columns.extend([{
+            "label": _("Invoiced Amount (SAR)"),
             "fieldname": "invoiced_amount",
             "fieldtype": "Currency",
             "options": "currency",
             "width": 140,
         },
-		{
-            "label": _("PO Amount Yet to Be Invoiced"),
-            "fieldname": "yet_to_be_invoiced",
+        {
+            "label": _("VAT Amount (SAR)"),
+            "fieldname": "vat_amount",
             "fieldtype": "Currency",
             "options": "currency",
             "width": 130,
+        }])
+
+    columns.extend([ {
+            "label": _("Invoiced Amount"),
+            "fieldname": "total_invoice_with_vat",
+            "fieldtype": "Currency",
+            "options": "currency",
+            "width": 150,
         },
         {
-            "label": _("Paid Amount"),
+            "label": _("PO Amount Yet to Be Invoiced (SAR)"),
+            "fieldname": "yet_to_be_invoiced",
+            "fieldtype": "Currency",
+            "options": "currency",
+            "width": 150,
+        },
+        {
+            "label": _("Paid Amount (SAR)"),
             "fieldname": "paid_amount",
             "fieldtype": "Currency",
             "options": "currency",
             "width": 130,
         },
-		{
+        {
             "label": _("Paid vs Invoiced (Difference)"),
             "fieldname": "paid_vs_invoiced",
             "fieldtype": "Currency",
             "options": "currency",
-            "width": 130,
+            "width": 150,
         },
         {
-            "label": _("Outstanding Amount"),
+            "label": _("Outstanding Amount (SAR)"),
             "fieldname": "outstanding_amount",
             "fieldtype": "Currency",
             "options": "currency",
-            "width": 130,
+            "width": 150,
         },
         {
             "label": _("Status"),
             "fieldname": "status",
             "fieldtype": "Data",
             "width": 110,
-        },
-        {
-            "label": _("Currency"),
-            "fieldname": "currency",
-            "fieldtype": "Link",
-            "options": "Currency",
-            "width": 80,
-        },
-    ]
+        }])
+    
+    return columns
 
 
 def get_data(filters):
@@ -130,11 +135,12 @@ def get_data(filters):
             po.supplier_name,
             s.supplier_group,
             po.company,
-            po.currency,
+            po.currency        AS po_currency,
             po.grand_total     AS po_amount,
             po.status
-        FROM `tabPurchase Order` po, `tabSupplier` s
-        WHERE po.docstatus = 1 AND po.supplier = s.name
+        FROM `tabPurchase Order` po
+        INNER JOIN `tabSupplier` s ON po.supplier = s.name
+        WHERE po.docstatus = 1
           {conditions}
         ORDER BY po.transaction_date, po.name
         """.format(conditions=conditions),
@@ -147,57 +153,76 @@ def get_data(filters):
 
     po_names = [d["purchase_order"] for d in po_list]
 
-    # ── 2. Invoiced amount per PO (via Purchase Invoice Items) ────────────────
-    invoiced_map = _get_invoiced_map(po_names)
+    # ── 2. Get company currency (assuming SAR) ───────────────────────────────
+    company_currency = frappe.db.get_value("Company", filters.get("company"), "default_currency") or "SAR"
 
-    # ── 3. Paid amount per PO — two sources:
-    #       a) Payments linked directly to PO (Payment Entry Reference)
-    #       b) Payments linked to Purchase Invoices that came from this PO
+    # ── 3. Invoiced amount per PO with VAT calculation ───────────────────────
+    invoice_data = _get_invoice_data(po_names, company_currency)
+
+    # ── 4. Paid amount per PO via GL Entry ───────────────────────────────────
     paid_map = _get_paid_map_via_gl(po_names)
 
-    # ── 4. Assemble rows ──────────────────────────────────────────────────────
+    # ── 5. Assemble rows ──────────────────────────────────────────────────────
     data = []
     for row in po_list:
         po = row["purchase_order"]
-        po_amount       = flt(row["po_amount"])
-        invoiced_amount = flt(invoiced_map.get(po, 0))
-        paid_amount     = flt(paid_map.get(po, 0))
+        po_amount = flt(row["po_amount"])
+        
+        # Get invoice data
+        invoice_info = invoice_data.get(po, {
+            'invoiced_amount': 0,
+            'vat_amount': 0,
+            'total_with_vat': 0
+        })
+        
+        invoiced_amount = flt(invoice_info['invoiced_amount'])
+        vat_amount = flt(invoice_info['vat_amount'])
+        total_invoice_with_vat = flt(invoice_info['total_with_vat'])
+        paid_amount = flt(paid_map.get(po, 0))
 
-        # Outstanding = PO Amount - Paid Amount
-        outstanding_amount = max(po_amount - paid_amount, 0)
+        # Convert PO amount to SAR if needed (for comparison)
+        # Assuming exchange rate if PO currency differs from SAR
+        po_amount_in_sar = _convert_to_sar(po_amount, row["po_currency"], company_currency, row["transaction_date"])
+        
+        # Calculations
+        yet_to_be_invoiced = max(po_amount_in_sar - total_invoice_with_vat, 0)
+        paid_vs_invoiced = paid_amount - total_invoice_with_vat
+        outstanding_amount = max(po_amount_in_sar - paid_amount, 0)
 
-        # Status: Fully Paid only when paid amount covers the full PO
-        display_status = "Fully Paid" if paid_amount >= po_amount else "Not Paid"
-        yet_to_be_invoiced = max(po_amount - invoiced_amount, 0)
-        paid_vs_invoiced = paid_amount - invoiced_amount
+        # Status determination
+        if paid_amount >= po_amount_in_sar:
+            display_status = "Fully Paid"
+        elif paid_amount > 0:
+            display_status = "Partially Paid"
+        else:
+            display_status = "Not Paid"
 
-        data.append(
-            {
-                "purchase_order":    po,
-                "transaction_date":  row["transaction_date"],
-                "supplier":          row["supplier"],
-                "supplier_name":     row["supplier_name"],
-                "supplier_group":    row["supplier_group"],
-                "company":           row["company"],
-                "currency":          row["currency"],
-                "po_amount":         po_amount,
-                "invoiced_amount":   invoiced_amount,
-                "yet_to_be_invoiced": yet_to_be_invoiced,
-                "paid_amount":       paid_amount,
-                "outstanding_amount": outstanding_amount,
-                "status":            display_status,
-                "paid_vs_invoiced":  paid_vs_invoiced,
-            }
-        )
+        data.append({
+            "purchase_order": po,
+            "transaction_date": row["transaction_date"],
+            "supplier": row["supplier"],
+            "supplier_name": row["supplier_name"],
+            "supplier_group": row["supplier_group"],
+            "company": row["company"],
+            "po_currency": row["po_currency"],
+            "po_amount": po_amount,
+            "invoiced_amount": invoiced_amount,
+            "vat_amount": vat_amount,
+            "total_invoice_with_vat": total_invoice_with_vat,
+            "yet_to_be_invoiced": yet_to_be_invoiced,
+            "paid_amount": paid_amount,
+            "outstanding_amount": outstanding_amount,
+            "status": display_status,
+            "paid_vs_invoiced": paid_vs_invoiced,
+            "currency": company_currency,  # Default currency for SAR amounts
+        })
 
-    # Filter by status if specified (computed field, not in SQL)
+    # Filter by status if specified
     if filters.get("status"):
         data = [d for d in data if d["status"] == filters["status"]]
 
     return data
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def get_conditions(filters):
     """Build WHERE clause fragments for the PO query."""
@@ -228,189 +253,59 @@ def get_conditions(filters):
         conditions.append("po.name = %(purchase_order)s")
         values["purchase_order"] = filters["purchase_order"]
 
-    clause = ("AND " + " AND ".join(conditions)) if conditions else ""
+    clause = " AND " + " AND ".join(conditions) if conditions else ""
     return clause, values
 
 
-def _get_invoiced_map(po_names):
+def _get_invoice_data(po_names, company_currency):
     """
-    Sum of submitted Purchase Invoice line amounts mapped back to the source PO.
-    Uses `purchase_order` field on Purchase Invoice Item.
+    Get invoice amounts including VAT from Purchase Invoices.
+    Handles invoices with and without VAT properly.
     """
     if not po_names:
         return {}
 
-    rows = frappe.db.sql(
-        """
-        SELECT
-            pii.purchase_order,
-            SUM(pii.total_amount) AS total_invoiced
-        FROM `tabPurchase Invoice Item` pii
-        INNER JOIN `tabPurchase Invoice` pi
-            ON pi.name = pii.parent
-        WHERE pi.docstatus = 1
-          AND pii.purchase_order IN %(po_names)s
-        GROUP BY pii.purchase_order
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    return {r["purchase_order"]: flt(r["total_invoiced"]) for r in rows}
-
-
-def _get_paid_map(po_names):
-    """
-    Aggregate paid amounts per PO from three channels:
+    invoice_data = {}
     
-    Channel A – Payment Entry References pointing directly at the PO
-    Channel B – Payment Entry References pointing at Purchase Invoices from this PO
-    Channel C – Journal Entry payments against Purchase Invoices from this PO
-    Channel D – Journal Entry payments directly against Purchase Orders
-    """
-    if not po_names:
-        return {}
-
-    paid_map = {}
-
-    # ── Channel A: direct PO references from Payment Entry ──────────────────
-    rows_a = frappe.db.sql(
-        """
-        SELECT
-            per.reference_name  AS purchase_order,
-            SUM(per.allocated_amount) AS paid
-        FROM `tabPayment Entry Reference` per
-        INNER JOIN `tabPayment Entry` pe
-            ON pe.name = per.parent
-        WHERE pe.docstatus = 1
-          AND pe.payment_type = 'Pay'
-          AND per.reference_doctype = 'Purchase Order'
-          AND per.reference_name IN %(po_names)s
-        GROUP BY per.reference_name
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in rows_a:
-        paid_map[r["purchase_order"]] = flt(paid_map.get(r["purchase_order"], 0)) + flt(r["paid"])
-
-    # ── Channel B: payments against invoices from Payment Entry ──────────────
-    # First, find all invoices linked to our POs
-    invoice_to_po = {}
-    inv_rows = frappe.db.sql(
-        """
-        SELECT DISTINCT pii.parent AS invoice, pii.purchase_order
+    # Get Purchase Invoices linked to POs
+    invoices = frappe.db.sql("""
+        SELECT DISTINCT
+            pi.name as invoice,
+            pii.purchase_order,
+            pi.base_net_total as net_total,
+            pi.base_total_taxes_and_charges as tax_amount,
+            pi.base_grand_total as grand_total
         FROM `tabPurchase Invoice Item` pii
         INNER JOIN `tabPurchase Invoice` pi ON pi.name = pii.parent
         WHERE pi.docstatus = 1
           AND pii.purchase_order IN %(po_names)s
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in inv_rows:
-        invoice_to_po[r["invoice"]] = r["purchase_order"]
-
-    if invoice_to_po:
-        invoice_names = list(invoice_to_po.keys())
+    """, {"po_names": po_names}, as_dict=True)
+    
+    # Group by PO and calculate totals
+    for inv in invoices:
+        po = inv["purchase_order"]
         
-        # Channel B: Payment Entry against invoices
-        rows_b = frappe.db.sql(
-            """
-            SELECT
-                per.reference_name  AS invoice,
-                SUM(per.allocated_amount) AS paid
-            FROM `tabPayment Entry Reference` per
-            INNER JOIN `tabPayment Entry` pe
-                ON pe.name = per.parent
-            WHERE pe.docstatus = 1
-              AND pe.payment_type = 'Pay'
-              AND per.reference_doctype = 'Purchase Invoice'
-              AND per.reference_name IN %(invoice_names)s
-            GROUP BY per.reference_name
-            """,
-            {"invoice_names": invoice_names},
-            as_dict=True,
-        )
-        for r in rows_b:
-            po = invoice_to_po.get(r["invoice"])
-            if po:
-                paid_map[po] = flt(paid_map.get(po, 0)) + flt(r["paid"])
-
-        # ── Channel C: Journal Entry against invoices ────────────────────────
-        rows_c = frappe.db.sql(
-            """
-            SELECT
-                jea.reference_name  AS invoice,
-                SUM(ABS(jea.credit_in_account_currency)) AS paid
-            FROM `tabJournal Entry Account` jea
-            INNER JOIN `tabJournal Entry` je ON je.name = jea.parent
-            WHERE je.docstatus = 1
-              AND jea.reference_type = 'Purchase Invoice'
-              AND jea.reference_name IN %(invoice_names)s
-              AND jea.credit_in_account_currency > 0
-            GROUP BY jea.reference_name
-            """,
-            {"invoice_names": invoice_names},
-            as_dict=True,
-        )
-        for r in rows_c:
-            po = invoice_to_po.get(r["invoice"])
-            if po:
-                paid_map[po] = flt(paid_map.get(po, 0)) + flt(r["paid"])
-
-    # ── Channel D: Journal Entry directly against Purchase Orders ────────────
-    rows_d = frappe.db.sql(
-        """
-        SELECT
-            jea.reference_name  AS purchase_order,
-            SUM(ABS(jea.credit_in_account_currency)) AS paid
-        FROM `tabJournal Entry Account` jea
-        INNER JOIN `tabJournal Entry` je ON je.name = jea.parent
-        WHERE je.docstatus = 1
-          AND jea.reference_type = 'Purchase Order'
-          AND jea.reference_name IN %(po_names)s
-          AND jea.credit_in_account_currency > 0
-        GROUP BY jea.reference_name
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in rows_d:
-        paid_map[r["purchase_order"]] = flt(paid_map.get(r["purchase_order"], 0)) + flt(r["paid"])
-
-    # ── Also consider Advance Payments via Journal Entry ────────────────────
-    # Get advances that are linked through Advance Against field
-    rows_e = frappe.db.sql(
-        """
-        SELECT
-            jea.reference_name AS purchase_order,
-            SUM(ABS(jea.credit_in_account_currency)) AS paid
-        FROM `tabJournal Entry Account` jea
-        INNER JOIN `tabJournal Entry` je ON je.name = jea.parent
-        WHERE je.docstatus = 1
-          AND jea.reference_type = 'Journal Entry'
-          AND jea.reference_name IN (
-              SELECT jea2.parent 
-              FROM `tabJournal Entry Account` jea2
-              WHERE jea2.reference_type = 'Purchase Order'
-                AND jea2.reference_name IN %(po_names)s
-                AND jea2.credit_in_account_currency > 0
-          )
-        GROUP BY jea.reference_name
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in rows_e:
-        paid_map[r["purchase_order"]] = flt(paid_map.get(r["purchase_order"], 0)) + flt(r["paid"])
-
-    return paid_map
+        if po not in invoice_data:
+            invoice_data[po] = {
+                'invoiced_amount': 0,
+                'vat_amount': 0,
+                'total_with_vat': 0
+            }
+        
+        # If invoice has taxes (VAT), use tax amount, otherwise 0
+        vat = flt(inv["tax_amount"]) if inv["tax_amount"] else 0
+        
+        invoice_data[po]['invoiced_amount'] += flt(inv["net_total"])
+        invoice_data[po]['vat_amount'] += vat
+        invoice_data[po]['total_with_vat'] += flt(inv["grand_total"])
+    
+    return invoice_data
 
 
 def _get_paid_map_via_gl(po_names):
     """
     Get paid amounts by querying GL Entry table directly.
-    This is more reliable as it captures ALL payments regardless of source.
+    This captures ALL payments regardless of source.
     """
     if not po_names:
         return {}
@@ -423,7 +318,8 @@ def _get_paid_map_via_gl(po_names):
         SELECT DISTINCT pii.parent AS invoice, pii.purchase_order
         FROM `tabPurchase Invoice Item` pii
         INNER JOIN `tabPurchase Invoice` pi ON pi.name = pii.parent
-        WHERE pi.docstatus = 1 AND pii.purchase_order IN %(po_names)s
+        WHERE pi.docstatus = 1 
+          AND pii.purchase_order IN %(po_names)s
     """, {"po_names": po_names}, as_dict=True)
     
     for r in inv_rows:
@@ -437,175 +333,54 @@ def _get_paid_map_via_gl(po_names):
     # Query GL Entry for credit entries (payments)
     gl_entries = frappe.db.sql("""
         SELECT
-            voucher_type as 'against_voucher_type',
-            voucher_no as 'against_voucher_no',
+            voucher_type as against_voucher_type,
+            voucher_no as against_voucher_no,
             SUM(credit_in_account_currency) as total_credit
         FROM `tabGL Entry`
         WHERE docstatus = 1
           AND voucher_type IN ('Purchase Order', 'Purchase Invoice')
           AND voucher_no IN %(references)s
           AND credit_in_account_currency > 0
-        GROUP BY against_voucher_type, voucher_no
+        GROUP BY voucher_type, voucher_no
     """, {"references": all_references}, as_dict=True)
     
     # Map payments to POs
     for entry in gl_entries:
         if entry['against_voucher_type'] == 'Purchase Order':
-            # Direct payment to PO
             po = entry['against_voucher_no']
             paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry['total_credit'])
         
         elif entry['against_voucher_type'] == 'Purchase Invoice':
-            # Payment to invoice - map to PO
             invoice = entry['against_voucher_no']
             po = invoice_to_po.get(invoice)
             if po:
                 paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry['total_credit'])
     
     return paid_map
+
+
+def _convert_to_sar(amount, from_currency, to_currency, posting_date):
     """
-    Aggregate paid amounts per PO from three channels:
+    Convert amount from PO currency to SAR (or company default currency).
+    If currencies are same, return original amount.
+    """
+    if not amount or from_currency == to_currency:
+        return amount
     
-    Channel A – Payment Entry References pointing directly at the PO
-    Channel B – Payment Entry References pointing at Purchase Invoices from this PO
-    Channel C – Journal Entry payments against Purchase Invoices from this PO
-    Channel D – Journal Entry payments directly against Purchase Orders
-    """
-    if not po_names:
-        return {}
-
-    paid_map = {}
-
-    # ── Channel A: direct PO references from Payment Entry ──────────────────
-    rows_a = frappe.db.sql(
-        """
-        SELECT
-            per.reference_name  AS purchase_order,
-            SUM(per.allocated_amount) AS paid
-        FROM `tabPayment Entry Reference` per
-        INNER JOIN `tabPayment Entry` pe
-            ON pe.name = per.parent
-        WHERE pe.docstatus = 1
-          AND pe.payment_type = 'Pay'
-          AND per.reference_doctype = 'Purchase Order'
-          AND per.reference_name IN %(po_names)s
-        GROUP BY per.reference_name
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in rows_a:
-        paid_map[r["purchase_order"]] = flt(paid_map.get(r["purchase_order"], 0)) + flt(r["paid"])
-
-    # ── Channel B: payments against invoices from Payment Entry ──────────────
-    # First, find all invoices linked to our POs
-    invoice_to_po = {}
-    inv_rows = frappe.db.sql(
-        """
-        SELECT DISTINCT pii.parent AS invoice, pii.purchase_order
-        FROM `tabPurchase Invoice Item` pii
-        INNER JOIN `tabPurchase Invoice` pi ON pi.name = pii.parent
-        WHERE pi.docstatus = 1
-          AND pii.purchase_order IN %(po_names)s
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in inv_rows:
-        invoice_to_po[r["invoice"]] = r["purchase_order"]
-
-    if invoice_to_po:
-        invoice_names = list(invoice_to_po.keys())
-        
-        # Channel B: Payment Entry against invoices
-        rows_b = frappe.db.sql(
-            """
-            SELECT
-                per.reference_name  AS invoice,
-                SUM(per.allocated_amount) AS paid
-            FROM `tabPayment Entry Reference` per
-            INNER JOIN `tabPayment Entry` pe
-                ON pe.name = per.parent
-            WHERE pe.docstatus = 1
-              AND pe.payment_type = 'Pay'
-              AND per.reference_doctype = 'Purchase Invoice'
-              AND per.reference_name IN %(invoice_names)s
-            GROUP BY per.reference_name
-            """,
-            {"invoice_names": invoice_names},
-            as_dict=True,
-        )
-        for r in rows_b:
-            po = invoice_to_po.get(r["invoice"])
-            if po:
-                paid_map[po] = flt(paid_map.get(po, 0)) + flt(r["paid"])
-
-        # ── Channel C: Journal Entry against invoices ────────────────────────
-        rows_c = frappe.db.sql(
-            """
-            SELECT
-                jea.reference_name  AS invoice,
-                SUM(ABS(jea.credit_in_account_currency)) AS paid
-            FROM `tabJournal Entry Account` jea
-            INNER JOIN `tabJournal Entry` je ON je.name = jea.parent
-            WHERE je.docstatus = 1
-              AND jea.reference_type = 'Purchase Invoice'
-              AND jea.reference_name IN %(invoice_names)s
-              AND jea.credit_in_account_currency > 0
-            GROUP BY jea.reference_name
-            """,
-            {"invoice_names": invoice_names},
-            as_dict=True,
-        )
-        for r in rows_c:
-            po = invoice_to_po.get(r["invoice"])
-            if po:
-                paid_map[po] = flt(paid_map.get(po, 0)) + flt(r["paid"])
-
-    # ── Channel D: Journal Entry directly against Purchase Orders ────────────
-    rows_d = frappe.db.sql(
-        """
-        SELECT
-            jea.reference_name  AS purchase_order,
-            SUM(ABS(jea.credit_in_account_currency)) AS paid
-        FROM `tabJournal Entry Account` jea
-        INNER JOIN `tabJournal Entry` je ON je.name = jea.parent
-        WHERE je.docstatus = 1
-          AND jea.reference_type = 'Purchase Order'
-          AND jea.reference_name IN %(po_names)s
-          AND jea.credit_in_account_currency > 0
-        GROUP BY jea.reference_name
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in rows_d:
-        paid_map[r["purchase_order"]] = flt(paid_map.get(r["purchase_order"], 0)) + flt(r["paid"])
-
-    # ── Also consider Advance Payments via Journal Entry ────────────────────
-    # Get advances that are linked through Advance Against field
-    rows_e = frappe.db.sql(
-        """
-        SELECT
-            jea.reference_name AS purchase_order,
-            SUM(ABS(jea.credit_in_account_currency)) AS paid
-        FROM `tabJournal Entry Account` jea
-        INNER JOIN `tabJournal Entry` je ON je.name = jea.parent
-        WHERE je.docstatus = 1
-          AND jea.reference_type = 'Journal Entry'
-          AND jea.reference_name IN (
-              SELECT jea2.parent 
-              FROM `tabJournal Entry Account` jea2
-              WHERE jea2.reference_type = 'Purchase Order'
-                AND jea2.reference_name IN %(po_names)s
-                AND jea2.credit_in_account_currency > 0
-          )
-        GROUP BY jea.reference_name
-        """,
-        {"po_names": po_names},
-        as_dict=True,
-    )
-    for r in rows_e:
-        paid_map[r["purchase_order"]] = flt(paid_map.get(r["purchase_order"], 0)) + flt(r["paid"])
-
-    return paid_map
+    # Get exchange rate
+    exchange_rate = frappe.db.get_value("Currency Exchange", 
+        {"from_currency": from_currency, "to_currency": to_currency, "date": ["<=", posting_date]},
+        "exchange_rate", order_by="date desc")
+    
+    if not exchange_rate:
+        # Fallback to current exchange rate
+        exchange_rate = frappe.db.get_value("Currency Exchange",
+            {"from_currency": from_currency, "to_currency": to_currency},
+            "exchange_rate")
+    
+    if exchange_rate:
+        return amount * exchange_rate
+    
+    # If no exchange rate found, return original amount with warning
+    # frappe.msgprint(_("No exchange rate found for {0} to {1}").format(from_currency, to_currency), alert=True)
+    return amount
