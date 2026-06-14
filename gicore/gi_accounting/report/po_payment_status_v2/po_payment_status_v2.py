@@ -190,7 +190,8 @@ def get_data(filters):
         outstanding_amount = max(po_amount_in_sar - paid_amount, 0)
 
         # Status determination
-        if paid_amount >= po_amount_in_sar:
+        # print(f"PO: {po}, PO Amount in SAR: {po_amount_in_sar}, Paid Amount: {paid_amount}, Invoiced Amount with VAT: {total_invoice_with_vat}")
+        if float(f"{paid_amount:.2f}") >= float(f"{po_amount_in_sar:.2f}"):
             display_status = "Fully Paid"
         elif paid_amount > 0:
             display_status = "Partially Paid"
@@ -302,62 +303,133 @@ def _get_invoice_data(po_names, company_currency):
     return invoice_data
 
 
+# def _get_paid_map_via_gl(po_names):
+#     """
+#     Get paid amounts by querying GL Entry table directly.
+#     This captures ALL payments regardless of source.
+#     """
+#     if not po_names:
+#         return {}
+    
+#     paid_map = {}
+    
+#     # Get all invoices linked to POs
+#     invoice_to_po = {}
+#     inv_rows = frappe.db.sql("""
+#         SELECT DISTINCT pii.parent AS invoice, pii.purchase_order
+#         FROM `tabPurchase Invoice Item` pii
+#         INNER JOIN `tabPurchase Invoice` pi ON pi.name = pii.parent
+#         WHERE pi.docstatus = 1 
+#           AND pii.purchase_order IN %(po_names)s
+#     """, {"po_names": po_names}, as_dict=True)
+    
+#     for r in inv_rows:
+#         invoice_to_po[r["invoice"]] = r["purchase_order"]
+    
+#     all_references = list(po_names) + list(invoice_to_po.keys())
+    
+#     if not all_references:
+#         return {}
+    
+#     # Query GL Entry for credit entries (payments)
+#     gl_entries = frappe.db.sql("""
+#         SELECT
+#             against_voucher_type as against_voucher_type,
+#             against_voucher as against_voucher_no,
+#             voucher_type,                   
+#             voucher_no ,
+#             SUM(debit_in_account_currency) as total_credit
+#         FROM `tabGL Entry`
+#         WHERE docstatus = 1 
+#             AND is_cancelled = 0
+#           AND against_voucher_type IN ('Purchase Order', 'Purchase Invoice')
+#           AND against_voucher IN %(references)s
+#           AND debit_in_account_currency > 0
+#         GROUP BY voucher_type, voucher_no
+#     """, {"references": all_references}, as_dict=True)
+    
+#     # Map payments to POs
+#     for entry in gl_entries:
+#         if entry['against_voucher_type'] == 'Purchase Order':
+#             po = entry['against_voucher_no']
+#             paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry['total_credit'])
+        
+#         elif entry['against_voucher_type'] == 'Purchase Invoice':
+#             invoice = entry['against_voucher_no']
+#             po = invoice_to_po.get(invoice)
+#             if po:
+#                 paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry['total_credit'])
+    
+#     return paid_map
+
 def _get_paid_map_via_gl(po_names):
     """
     Get paid amounts by querying GL Entry table directly.
-    This captures ALL payments regardless of source.
+    Only attributes payment amounts for invoices that are actually
+    linked to the specific PO — prevents double-counting when a single
+    payment voucher covers invoices from different POs.
     """
     if not po_names:
         return {}
-    
-    paid_map = {}
-    
-    # Get all invoices linked to POs
-    invoice_to_po = {}
+
+    # ── Step 1: Build invoice → PO map ───────────────────────────────────────
     inv_rows = frappe.db.sql("""
         SELECT DISTINCT pii.parent AS invoice, pii.purchase_order
         FROM `tabPurchase Invoice Item` pii
         INNER JOIN `tabPurchase Invoice` pi ON pi.name = pii.parent
-        WHERE pi.docstatus = 1 
+        WHERE pi.docstatus = 1
           AND pii.purchase_order IN %(po_names)s
     """, {"po_names": po_names}, as_dict=True)
-    
-    for r in inv_rows:
-        invoice_to_po[r["invoice"]] = r["purchase_order"]
-    
-    all_references = list(po_names) + list(invoice_to_po.keys())
-    
-    if not all_references:
-        return {}
-    
-    # Query GL Entry for credit entries (payments)
-    gl_entries = frappe.db.sql("""
-        SELECT
-            voucher_type as against_voucher_type,
-            voucher_no as against_voucher_no,
-            SUM(credit_in_account_currency) as total_credit
-        FROM `tabGL Entry`
-        WHERE docstatus = 1
-          AND voucher_type IN ('Purchase Order', 'Purchase Invoice')
-          AND voucher_no IN %(references)s
-          AND credit_in_account_currency > 0
-        GROUP BY voucher_type, voucher_no
-    """, {"references": all_references}, as_dict=True)
-    
-    # Map payments to POs
-    for entry in gl_entries:
-        if entry['against_voucher_type'] == 'Purchase Order':
-            po = entry['against_voucher_no']
-            paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry['total_credit'])
-        
-        elif entry['against_voucher_type'] == 'Purchase Invoice':
-            invoice = entry['against_voucher_no']
-            po = invoice_to_po.get(invoice)
-            if po:
-                paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry['total_credit'])
-    
-    return paid_map
 
+    invoice_to_po = {r["invoice"]: r["purchase_order"] for r in inv_rows}
+
+    if not invoice_to_po:
+        return {}
+
+    paid_map = {}
+
+    # ── Step 2: Payments against Purchase Invoices ────────────────────────────
+    # Join GL Entry with Purchase Invoice to get per-invoice paid amount,
+    # grouped by (voucher_no, against_voucher) so each invoice in a multi-
+    # invoice payment is counted separately.
+    invoice_payments = frappe.db.sql("""
+        SELECT
+            gle.against_voucher        AS invoice,
+            SUM(gle.debit_in_account_currency) AS paid
+        FROM `tabGL Entry` gle
+        WHERE gle.docstatus = 1
+          AND gle.is_cancelled = 0
+          AND gle.against_voucher_type = 'Purchase Invoice'
+          AND gle.against_voucher IN %(invoices)s
+          AND gle.debit_in_account_currency > 0
+        GROUP BY gle.against_voucher
+    """, {"invoices": list(invoice_to_po.keys())}, as_dict=True)
+
+    for entry in invoice_payments:
+        invoice = entry["invoice"]
+        po = invoice_to_po.get(invoice)
+        if po:
+            paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry["paid"])
+
+    # ── Step 3: Payments made directly against Purchase Orders ───────────────
+    direct_payments = frappe.db.sql("""
+        SELECT
+            gle.against_voucher        AS purchase_order,
+            SUM(gle.debit_in_account_currency) AS paid
+        FROM `tabGL Entry` gle
+        WHERE gle.docstatus = 1
+          AND gle.is_cancelled = 0
+          AND gle.against_voucher_type = 'Purchase Order'
+          AND gle.against_voucher IN %(po_names)s
+          AND gle.debit_in_account_currency > 0
+        GROUP BY gle.against_voucher
+    """, {"po_names": po_names}, as_dict=True)
+
+    for entry in direct_payments:
+        po = entry["purchase_order"]
+        paid_map[po] = flt(paid_map.get(po, 0)) + flt(entry["paid"])
+
+    return paid_map
 
 def _convert_to_sar(amount, from_currency, to_currency, posting_date):
     """
