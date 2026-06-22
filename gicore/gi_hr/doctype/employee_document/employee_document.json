@@ -1,0 +1,99 @@
+{
+ "doctype": "DocType",
+ "name": "Employee Document",
+ "module": "Gi Hr",
+ "istable": 1,
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "document_number",
+  "issuing_authority",
+  "column_break_1",
+  "issue_date",
+  "expiry_date",
+  "attachment",
+  "last_notified_threshold"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "label": "Document Type",
+   "options": "Iqama\nPassport\nWork Permit\nGOSI Card\nDriving License\nHealth Certificate\nVisa\nOther",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "document_number",
+   "fieldtype": "Data",
+   "label": "Document Number",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "issuing_authority",
+   "fieldtype": "Data",
+   "label": "Issuing Authority",
+   "columns": 2
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "Issue Date",
+   "columns": 2
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Scanned Copy"
+  },
+  {
+   "fieldname": "last_notified_threshold",
+   "fieldtype": "Select",
+   "label": "Last Notified Threshold",
+   "options": "\n90\n60\n30\n0",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Internal — tracks which reminder threshold was last sent, so reminders don't repeat daily once fired."
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "HR Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "HR User",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
