@@ -48,14 +48,15 @@ SALARY_COMPONENT_MAP = {
 # Confirm this order/naming against the template downloaded from the
 # Mudad portal before going live.
 CSV_COLUMNS = [
-    "Employee ID",       # Iqama / National ID
+    "Employee Id/Iqama",       # Iqama / National ID
+    "Employee Account No/IBAN",
     "Employee Name",
-    "IBAN",
+    "Bank Code",
     "Basic Salary",
     "Housing Allowance",
-    "Other Earnings",
+    "Other Allowance",
     "Deductions",
-    "Net Amount",
+    "Total Amount",
 ]
 
 WRITE_HEADER_ROW = True  # set False if the portal template expects no header
@@ -91,6 +92,7 @@ def generate_mudad_wage_file(payroll_entry):
         national_id = employee.get(FIELD_MAP["national_id"])
         print(f"Processing employee {employee.name}: National ID / Iqama = {national_id}")
         iban = employee.get(FIELD_MAP["iban"])
+        bank_code = employee.get("custom_bank_code") or "000"  # default if not set
 
         if not national_id:
             frappe.throw(
@@ -123,8 +125,9 @@ def generate_mudad_wage_file(payroll_entry):
 
         rows.append([
             national_id,
-            slip.employee_name,
             iban,
+            slip.employee_name,
+            bank_code,
             f"{basic:.2f}",
             f"{housing:.2f}",
             f"{other_earnings:.2f}",
