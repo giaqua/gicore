@@ -247,3 +247,11 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+
+app_include_js = [
+    # "custom_notifications.js",
+    "/assets/gicore/js/report_issue.js",
+    # "/assets/gicore/js/lib/html2canvas.min.js",
+    # "/assets/gicore/js/report_issue_widget.js"
+    # other js files...
+]
