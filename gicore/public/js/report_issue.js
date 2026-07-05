@@ -133,37 +133,63 @@
 
 // gicore/public/js/report_issue_widget.js
 
-frappe.after_ajax(() => {
-    if (document.getElementById('report-issue-fab')) return;
+// frappe.after_ajax(() => {
+//     if (document.getElementById('report-issue-fab')) return;
 
-    // Floating button
-    const fab = document.createElement('div');
-    fab.id = 'report-issue-fab';
-    fab.innerHTML = `<i class="fa fa-exclamation-circle"></i> Report an Issue`;
-    fab.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #D50000;
-        color: white;
-        padding: 10px 16px;
-        border-radius: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        cursor: pointer;
-        z-index: 9999;
-        font-size: 13px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: transform 0.15s ease;
-    `;
-    fab.onmouseenter = () => fab.style.transform = 'scale(1.05)';
-    fab.onmouseleave = () => fab.style.transform = 'scale(1)';
+//     // Floating button
+//     const fab = document.createElement('div');
+//     fab.id = 'report-issue-fab';
+//     fab.innerHTML = `<i class="fa fa-exclamation-circle"></i> Report an Issue`;
+//     fab.style.cssText = `
+//         position: fixed;
+//         bottom: 20px;
+//         right: 20px;
+//         background: #D50000;
+//         color: white;
+//         padding: 10px 16px;
+//         border-radius: 24px;
+//         box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+//         cursor: pointer;
+//         z-index: 9999;
+//         font-size: 13px;
+//         font-weight: 500;
+//         display: flex;
+//         align-items: center;
+//         gap: 6px;
+//         transition: transform 0.15s ease;
+//     `;
+//     fab.onmouseenter = () => fab.style.transform = 'scale(1.05)';
+//     fab.onmouseleave = () => fab.style.transform = 'scale(1)';
 
-    fab.addEventListener('click', () => open_report_issue_dialog());
-    document.body.appendChild(fab);
-});
+//     fab.addEventListener('click', () => open_report_issue_dialog());
+//     document.body.appendChild(fab);
+// });
+
+if (!document.getElementById('freshworks-help-btn')) {
+  var btn = document.createElement('button');
+  btn.id = 'freshworks-help-btn';
+  btn.type = 'button';
+  btn.title = 'Contact Support';
+//   btn.onclick = open_report_issue_dialog();
+  btn.className = 'my-help-btn';
+  btn.textContent = 'Help';
+
+  document.body.appendChild(btn);
+
+   btn.onmouseenter = () => btn.style.transform = 'scale(1.05)';
+    btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+
+    btn.addEventListener('click', () => open_report_issue_dialog());
+    document.body.appendChild(btn);
+
+
+//     document.body.appendChild(fab);
+//   window.addEventListener('fw:widget:loaded', function () {
+//     if (typeof FreshworksWidget === 'function') {
+//       FreshworksWidget('hide', 'launcher');
+//     }
+//   });
+}
 
 function open_report_issue_dialog() {
     let current_route = window.location.href;
@@ -236,8 +262,8 @@ function open_report_issue_dialog() {
                     reference_doctype: current_doctype,
                     reference_name: current_docname
                 },
-                freeze: true,
-                freeze_message: 'Submitting...',
+                // freeze: true,
+                // freeze_message: 'Submitting...',
                 callback(r) {
                     if (r.message) {
                         d.hide();
