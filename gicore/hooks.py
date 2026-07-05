@@ -250,7 +250,7 @@ app_license = "mit"
 
 app_include_js = [
     # "custom_notifications.js",
-    "/assets/gicore/js/report_issue.js",
+    "/assets/gicore/js/report_issue_v2.js",
     # "/assets/gicore/js/lib/html2canvas.min.js",
     # "/assets/gicore/js/report_issue_widget.js"
     # other js files...

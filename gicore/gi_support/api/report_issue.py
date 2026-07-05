@@ -62,3 +62,20 @@ def create_issue(subject, description, priority="Medium", screenshot=None,
 
 #     frappe.db.commit()
 #     return issue.name
+
+
+@frappe.whitelist()
+def get_my_issues():
+    """Return all issues raised by the current logged-in user."""
+    issues = frappe.get_all(
+        "Issue",
+        filters={"raised_by": frappe.session.user},
+        fields=[
+            "name", "subject", "status", "priority",
+            "creation", "modified", "opening_date", "opening_time"
+        ],
+        order_by="creation desc",
+        limit_page_length=0,
+        ignore_permissions=True
+    )
+    return issues
