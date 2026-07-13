@@ -562,6 +562,7 @@ def _get_paid_map(po_names):
 			WHERE gle.docstatus = 1
 			  AND gle.is_cancelled = 0
 			  AND gle.voucher_type = 'Journal Entry'
+			AND gle.voucher_subtype != 'Deferred Expense'
 			  AND gle.against_voucher_type = 'Purchase Invoice'
 			  AND gle.against_voucher IN %(invoices)s
 			  AND gle.debit_in_account_currency > 0
@@ -605,6 +606,7 @@ def _get_paid_map(po_names):
 		WHERE gle.docstatus = 1
 		  AND gle.is_cancelled = 0
 		  AND gle.voucher_type = 'Journal Entry'
+			AND gle.voucher_subtype != 'Deferred Expense'
 		  AND gle.against_voucher_type = 'Purchase Order'
 		  AND gle.against_voucher IN %(po_names)s
 		  AND gle.debit_in_account_currency > 0
@@ -642,6 +644,7 @@ def _get_paid_map(po_names):
 		WHERE gle.docstatus = 1
 		  AND gle.is_cancelled = 0
 		  AND gle.voucher_type = 'Journal Entry'
+									AND gle.voucher_subtype != 'Deferred Expense'
 		  AND gle.against_voucher_type = 'Payment Entry'
 		  AND gle.debit_in_account_currency > 0
 		GROUP BY gle.against_voucher

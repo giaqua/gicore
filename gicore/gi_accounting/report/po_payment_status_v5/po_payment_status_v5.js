@@ -50,7 +50,7 @@ frappe.query_reports["PO Payment Status V5"] = {
 			label: __("Status"),
 			fieldtype: "MultiSelect",
 			options: "\nFully Paid\nPartially Paid\nNot Paid",
-			default:["Partially Paid", "Not Paid" ],
+			default: ["Partially Paid", "Not Paid"],
 		},
 		{
 			fieldname: "purchase_order",
@@ -89,8 +89,6 @@ frappe.query_reports["PO Payment Status V5"] = {
 	// ── Color-code, badge, and add the per-row PO Summary trigger ───────────
 	formatter: function (value, row, column, data, default_formatter) {
 
-		// Purchase Order column: either a group label (month/grand total) or
-		// the PO link plus the "view summary" button.
 		if (column.fieldname === "purchase_order") {
 			if (data && (data.is_month_total || data.is_grand_total)) {
 				return highlight_wrap(`<strong>${frappe.utils.escape_html(data.label || "")}</strong>`, data);
@@ -98,13 +96,11 @@ frappe.query_reports["PO Payment Status V5"] = {
 			if (data && data.purchase_order) {
 				const link = default_formatter(value, row, column, data);
 				return `<span style="display:inline-flex;align-items:center;gap:6px;">
-					
 					<button type="button" class="btn-reset po-summary-trigger" data-po="${frappe.utils.escape_html(data.purchase_order)}"
 						title="${__('View PO Summary')}"
 						style="border:none;background:transparent;cursor:pointer;padding:2px;line-height:0;color:#2490ef;">
 						${eye_icon()}
 					</button>
-					
 					<a href="/app/purchase-order/${value}">${value.slice(-10)}</a>
 				</span>`;
 			}
@@ -151,8 +147,6 @@ frappe.query_reports["PO Payment Status V5"] = {
 			}
 		}
 
-		// Bleed-fill the whole cell for month-total / grand-total rows so the
-		// grouping reads like a trial balance band, not just bold text.
 		if (data && (data.is_month_total || data.is_grand_total)) {
 			value = highlight_wrap(value, data);
 		}
@@ -178,8 +172,6 @@ frappe.query_reports["PO Payment Status V5"] = {
 			show_kpi_dialog(report);
 		});
 
-		// Delegated handler — bound once on the stable wrapper so it keeps
-		// working after every refresh/sort re-renders the DataTable rows.
 		$(report.page.wrapper)
 			.off("click", ".po-summary-trigger")
 			.on("click", ".po-summary-trigger", function (e) {
@@ -188,14 +180,6 @@ frappe.query_reports["PO Payment Status V5"] = {
 				const po = $(this).attr("data-po");
 				if (po) pos_render_dialog(po);
 			});
-
-		// if (!$(report.page.wrapper).find(".po-report-note").length) {
-		// 	$(report.page.wrapper).find(".page-head").append(`
-		// 		<div class="text-muted small po-report-note" style="margin-top: 5px;">
-		// 			ℹ️ ${__("Click the")} <span style="display:inline-block;vertical-align:middle;">${eye_icon()}</span> ${__("icon next to any Purchase Order for its full summary — items, receipts, invoices and payments.")}
-		// 		</div>
-		// 	`);
-		// }
 	},
 };
 
@@ -209,8 +193,6 @@ function eye_icon() {
 		<circle cx="12" cy="12" r="3"></circle></svg>`;
 }
 
-// Bleed a cell's content into a full-width colored band — used for the
-// month-total / grand-total rows so grouped data reads like a trial balance.
 function highlight_wrap(html, data) {
 	if (data && data.is_grand_total) {
 		return `<span style="display:block;margin:-7px -10px;padding:7px 10px;background:#1b5fb0;color:#fff;font-weight:700;">${html}</span>`;
@@ -320,7 +302,7 @@ function show_kpi_dialog(report) {
 	const currency = frappe.boot.sysdefaults.currency;
 	const fc = v => format_currency(flt(v), currency);
 
-	const total_po_count = rows.length-1;
+	const total_po_count = rows.length;
 	const total_po_value = rows.reduce((s, r) => s + flt(r.po_amount_sar), 0);
 	const total_invoiced = rows.reduce((s, r) => s + flt(r.total_invoice_with_vat), 0);
 	const total_paid = rows.reduce((s, r) => s + flt(r.paid_amount), 0);
@@ -402,11 +384,6 @@ function show_kpi_dialog(report) {
 
 // ============================================================================
 // PER-ROW "PO SUMMARY" POPUP
-// Reuses the same fetch-and-prorate approach as the Purchase Order form
-// dialog: PO header + items via frappe.db.get_doc (single permission check,
-// no separate child-table query needed), then Receipts / Invoices / Payment
-// Entries / Journal Entries via frappe.db.get_list with parent_doctype set
-// so the permission check resolves against the parent, not the child table.
 // ============================================================================
 
 async function pos_render_dialog(po_name) {
@@ -532,6 +509,7 @@ async function pos_fetch_data(po_name) {
 		return Object.assign({}, r, { shared: s.shared, po_share_total: flt(r.grand_total) * s.proportion });
 	});
 
+	// ── Payment Entry ────────────────────────────────────────────────────────
 	let pe_refs_invoice = [];
 	if (invoice_names.length) {
 		pe_refs_invoice = await frappe.db.get_list("Payment Entry Reference", {
@@ -553,7 +531,7 @@ async function pos_fetch_data(po_name) {
 	let payment_entries = [];
 	if (pe_names.length) {
 		payment_entries = await frappe.db.get_list("Payment Entry", {
-			filters: { name: ["in", pe_names], docstatus: ["<", 2] },
+			filters: { name: ["in", pe_names], docstatus: 1 },
 			fields: ["name", "posting_date", "mode_of_payment", "status", "docstatus"],
 			order_by: "posting_date desc",
 			limit: 0
@@ -569,10 +547,11 @@ async function pos_fetch_data(po_name) {
 		const allocated_to = refs.map(r => (r.reference_name === po_name ? `${r.reference_name} (${__("Advance")})` : r.reference_name)).join(", ");
 		return {
 			source: "Payment Entry", name: p.name, posting_date: p.posting_date, mode: p.mode_of_payment,
-			allocated_to, full_allocated, po_share, status: p.docstatus === 0 ? "Draft" : p.status, docstatus: p.docstatus
+			allocated_to, full_allocated, po_share, status: p.status, docstatus: p.docstatus
 		};
 	});
 
+	// ── Journal Entry (voucher_type = "Journal Entry", submitted only) ───────
 	let je_refs_invoice = [];
 	if (invoice_names.length) {
 		je_refs_invoice = await frappe.db.get_list("Journal Entry Account", {
@@ -590,7 +569,7 @@ async function pos_fetch_data(po_name) {
 	});
 
 	je_refs_invoice = je_refs_invoice.map(r => Object.assign({}, r, { reference_doctype: "Purchase Invoice" }));
-	je_refs_po = je_refs_po.map(r => Object.assign({}, r, { reference_doctype: "Purchase Order" }));
+	je_refs_po      = je_refs_po.map(r => Object.assign({}, r, { reference_doctype: "Purchase Order" }));
 
 	const je_refs_all = [...je_refs_invoice, ...je_refs_po]
 		.map(r => Object.assign({}, r, { amount: Math.abs(flt(r.debit_in_account_currency) - flt(r.credit_in_account_currency)) }))
@@ -601,7 +580,11 @@ async function pos_fetch_data(po_name) {
 	let journal_entries = [];
 	if (je_names.length) {
 		journal_entries = await frappe.db.get_list("Journal Entry", {
-			filters: { name: ["in", je_names], docstatus: ["<", 2] },
+			filters: {
+				name: ["in", je_names],
+				voucher_type: "Journal Entry",
+				docstatus: 1
+			},
 			fields: ["name", "posting_date", "voucher_type", "docstatus"],
 			order_by: "posting_date desc",
 			limit: 0
@@ -617,7 +600,7 @@ async function pos_fetch_data(po_name) {
 		const allocated_to = refs.map(r => (r.reference_name === po_name ? `${r.reference_name} (${__("Advance")})` : r.reference_name)).join(", ");
 		return {
 			source: "Journal Entry", name: j.name, posting_date: j.posting_date, mode: j.voucher_type,
-			allocated_to, full_allocated, po_share, status: j.docstatus === 0 ? "Draft" : "Submitted", docstatus: j.docstatus
+			allocated_to, full_allocated, po_share, status: "Submitted", docstatus: 1
 		};
 	});
 
@@ -625,6 +608,8 @@ async function pos_fetch_data(po_name) {
 
 	return { po, receipts: receipts_enriched, invoices: invoices_enriched, payments };
 }
+
+// ── Render ───────────────────────────────────────────────────────────────────
 
 function pos_build_html(data) {
 	const { po, receipts, invoices, payments } = data;
@@ -635,9 +620,9 @@ function pos_build_html(data) {
 	const grand_total = flt(po.grand_total);
 	const outstanding = Math.max(grand_total - total_paid, 0);
 	const pct_received = flt(po.per_received) || 0;
-	const pct_billed = flt(po.per_billed) || 0;
-	const pct_paid = grand_total ? Math.min((total_paid / grand_total) * 100, 100) : 0;
-	const any_shared = invoices.some(i => i.shared) || receipts.some(r => r.shared);
+	const pct_billed   = flt(po.per_billed)   || 0;
+	const pct_paid     = grand_total ? Math.min((total_paid / grand_total) * 100, 100) : 0;
+	const any_shared   = invoices.some(i => i.shared) || receipts.some(r => r.shared);
 
 	return `
 	${pos_style_block()}
@@ -656,16 +641,16 @@ function pos_build_html(data) {
 		<div class="pos-sum-kpis">
 			${pos_kpi_card(__("Grand Total"), fc(grand_total), "blue")}
 			${pos_kpi_progress(__("Received"), pct_received, "teal")}
-			${pos_kpi_progress(__("Billed"), pct_billed, "orange")}
-			${pos_kpi_progress(__("Paid"), pct_paid, "green")}
+			${pos_kpi_progress(__("Billed"),   pct_billed,   "orange")}
+			${pos_kpi_progress(__("Paid"),     pct_paid,     "green")}
 			${pos_kpi_card(__("Outstanding"), fc(outstanding), outstanding > 0 ? "red" : "green")}
 		</div>
 		${any_shared ? `<div class="pos-sum-note">${__("Some linked documents contain items from other Purchase Orders too — amounts marked")} <span class="pos-shared-tag">${__("Shared")}</span> ${__("are this PO's prorated share, not the full document value.")}</div>` : ""}
 
-		${pos_section(__("PO Items") + ` (${(po.items || []).length})`, pos_items_table(po, fc))}
-		${pos_section(__("Purchase Receipts") + ` (${receipts.length})`, receipts.length ? pos_receipts_table(receipts, fc) : pos_empty(__("No Purchase Receipt created against this PO yet.")))}
-		${pos_section(__("Purchase Invoices") + ` (${invoices.length})`, invoices.length ? pos_invoices_table(invoices, fc) : pos_empty(__("No Purchase Invoice created against this PO yet.")))}
-		${pos_section(__("Payments") + ` (${payments.length})`, payments.length ? pos_payments_table(payments, fc) : pos_empty(__("No payment recorded against this PO or its invoices yet.")))}
+		${pos_section(__("PO Items")            + ` (${(po.items || []).length})`, pos_items_table(po, fc))}
+		${pos_section(__("Purchase Receipts")   + ` (${receipts.length})`,  receipts.length  ? pos_receipts_table(receipts, fc)   : pos_empty(__("No Purchase Receipt created against this PO yet.")))}
+		${pos_section(__("Purchase Invoices")   + ` (${invoices.length})`,  invoices.length  ? pos_invoices_table(invoices, fc)   : pos_empty(__("No Purchase Invoice created against this PO yet.")))}
+		${pos_section(__("Payments")            + ` (${payments.length})`,  payments.length  ? pos_payments_table(payments, fc)   : pos_empty(__("No payment recorded against this PO or its invoices yet.")))}
 	</div>`;
 }
 
@@ -698,10 +683,10 @@ function pos_badge(status, size) {
 
 function pos_status_color(status) {
 	const s = (status || "").toLowerCase();
-	if (s.includes("cancel")) return { bg: "#fde2e2", fg: "#c92a2a" };
+	if (s.includes("cancel"))                                                                          return { bg: "#fde2e2", fg: "#c92a2a" };
 	if (s.includes("complet") || s.includes("fully") || s === "paid" || s.includes("closed") || s === "submitted") return { bg: "#dff5e3", fg: "#1f9d55" };
-	if (s.includes("overdue") || s.includes("unpaid")) return { bg: "#fde2e2", fg: "#c92a2a" };
-	if (s.includes("partl") || s.includes("partial") || s.includes("to ") || s.includes("draft")) return { bg: "#fde8cf", fg: "#b15c00" };
+	if (s.includes("overdue") || s.includes("unpaid"))                                                 return { bg: "#fde2e2", fg: "#c92a2a" };
+	if (s.includes("partl") || s.includes("partial") || s.includes("to ") || s.includes("draft"))     return { bg: "#fde8cf", fg: "#b15c00" };
 	return { bg: "#dceafd", fg: "#1b5fb0" };
 }
 
@@ -716,18 +701,18 @@ function pos_shared_tag(is_shared) {
 
 function pos_items_table(po, fc) {
 	const rows = (po.items || []).map(it => {
-		const qty = flt(it.qty);
+		const qty      = flt(it.qty);
 		const received = flt(it.received_qty);
-		const billed = flt(it.billed_amt);
-		const amount = flt(it.amount);
+		const billed   = flt(it.billed_amt);
+		const amount   = flt(it.amount);
 
 		let recv_status = "Pending";
 		if (received >= qty && qty > 0) recv_status = "Fully Received";
-		else if (received > 0) recv_status = "Partially Received";
+		else if (received > 0)          recv_status = "Partially Received";
 
 		let bill_status = "Not Billed";
 		if (amount > 0 && billed >= amount - 0.01) bill_status = "Fully Billed";
-		else if (billed > 0) bill_status = "Partially Billed";
+		else if (billed > 0)                        bill_status = "Partially Billed";
 
 		return `<tr>
 			<td><div class="pos-sum-cell-title">${frappe.utils.escape_html(it.item_code || "")}</div><div class="pos-sum-cell-sub">${frappe.utils.escape_html(it.item_name || "")}</div></td>
@@ -742,9 +727,11 @@ function pos_items_table(po, fc) {
 	}).join("");
 
 	return `<div class="pos-sum-table-wrap"><table class="pos-sum-table">
-		<thead><tr><th>${__("Item")}</th><th class="text-right">${__("Ordered")}</th><th class="text-right">${__("Received")}</th>
-		<th>${__("Receipt Status")}</th><th class="text-right">${__("Billed")}</th><th>${__("Bill Status")}</th>
-		<th class="text-right">${__("Rate")}</th><th class="text-right">${__("Amount")}</th></tr></thead>
+		<thead><tr>
+			<th>${__("Item")}</th><th class="text-right">${__("Ordered")}</th><th class="text-right">${__("Received")}</th>
+			<th>${__("Receipt Status")}</th><th class="text-right">${__("Billed")}</th><th>${__("Bill Status")}</th>
+			<th class="text-right">${__("Rate")}</th><th class="text-right">${__("Amount")}</th>
+		</tr></thead>
 		<tbody>${rows}</tbody></table></div>`;
 }
 
@@ -758,8 +745,10 @@ function pos_receipts_table(receipts, fc) {
 	</tr>`).join("");
 
 	return `<div class="pos-sum-table-wrap"><table class="pos-sum-table">
-		<thead><tr><th>${__("Purchase Receipt")}</th><th>${__("Date")}</th><th>${__("Status")}</th>
-		<th class="text-right">${__("Receipt Total")}</th><th class="text-right">${__("This PO's Share")}</th></tr></thead>
+		<thead><tr>
+			<th>${__("Purchase Receipt")}</th><th>${__("Date")}</th><th>${__("Status")}</th>
+			<th class="text-right">${__("Receipt Total")}</th><th class="text-right">${__("This PO's Share")}</th>
+		</tr></thead>
 		<tbody>${rows}</tbody></table></div>`;
 }
 
@@ -774,14 +763,19 @@ function pos_invoices_table(invoices, fc) {
 	</tr>`).join("");
 
 	return `<div class="pos-sum-table-wrap"><table class="pos-sum-table">
-		<thead><tr><th>${__("Purchase Invoice")}</th><th>${__("Date")}</th><th>${__("Status")}</th>
-		<th class="text-right">${__("Invoice Total")}</th><th class="text-right">${__("This PO's Share")}</th><th class="text-right">${__("Outstanding (Est.)")}</th></tr></thead>
+		<thead><tr>
+			<th>${__("Purchase Invoice")}</th><th>${__("Date")}</th><th>${__("Status")}</th>
+			<th class="text-right">${__("Invoice Total")}</th><th class="text-right">${__("This PO's Share")}</th>
+			<th class="text-right">${__("Outstanding (Est.)")}</th>
+		</tr></thead>
 		<tbody>${rows}</tbody></table></div>`;
 }
 
 function pos_payments_table(payments, fc) {
 	const rows = payments.map(p => {
-		const link = p.source === "Payment Entry" ? `/app/payment-entry/${encodeURIComponent(p.name)}` : `/app/journal-entry/${encodeURIComponent(p.name)}`;
+		const link = p.source === "Payment Entry"
+			? `/app/payment-entry/${encodeURIComponent(p.name)}`
+			: `/app/journal-entry/${encodeURIComponent(p.name)}`;
 		const differs = Math.abs(flt(p.full_allocated) - flt(p.po_share)) > 0.01;
 		return `<tr>
 			<td><a href="${link}" target="_blank">${p.name}</a></td>
@@ -790,13 +784,19 @@ function pos_payments_table(payments, fc) {
 			<td>${frappe.utils.escape_html(p.mode || "-")}</td>
 			<td>${frappe.utils.escape_html(p.allocated_to || "-")}</td>
 			<td>${pos_badge(p.status)}</td>
-			<td class="text-right${differs ? ' pos-prorated' : ''}" title="${differs ? __('Full reference amount: {0}', [fc(p.full_allocated)]) : ''}">${fc(p.po_share)}</td>
+			<td class="text-right${differs ? ' pos-prorated' : ''}"
+				title="${differs ? __('Full reference amount: {0}', [fc(p.full_allocated)]) : ''}">
+				${fc(p.po_share)}
+			</td>
 		</tr>`;
 	}).join("");
 
 	return `<div class="pos-sum-table-wrap"><table class="pos-sum-table">
-		<thead><tr><th>${__("Voucher")}</th><th>${__("Source")}</th><th>${__("Date")}</th><th>${__("Mode / Type")}</th>
-		<th>${__("Allocated To")}</th><th>${__("Status")}</th><th class="text-right">${__("This PO's Share")}</th></tr></thead>
+		<thead><tr>
+			<th>${__("Voucher")}</th><th>${__("Source")}</th><th>${__("Date")}</th>
+			<th>${__("Mode / Type")}</th><th>${__("Allocated To")}</th>
+			<th>${__("Status")}</th><th class="text-right">${__("This PO's Share")}</th>
+		</tr></thead>
 		<tbody>${rows}</tbody></table></div>`;
 }
 
@@ -809,13 +809,18 @@ function pos_style_block() {
 		.pos-sum-kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:10px; }
 		@media (max-width:900px) { .pos-sum-kpis { grid-template-columns:repeat(2,1fr); } }
 		.pos-sum-kpi { background:var(--card-bg,#fff); border:1px solid var(--border-color,#d1d8dd); border-left:3px solid #2490ef; border-radius:8px; padding:12px 14px; }
-		.pos-accent-blue { border-left-color:#2490ef; } .pos-accent-teal { border-left-color:#17a2b8; }
-		.pos-accent-orange { border-left-color:#ffa00a; } .pos-accent-green { border-left-color:#28a745; } .pos-accent-red { border-left-color:#dc3545; }
+		.pos-accent-blue   { border-left-color:#2490ef; }
+		.pos-accent-teal   { border-left-color:#17a2b8; }
+		.pos-accent-orange { border-left-color:#ffa00a; }
+		.pos-accent-green  { border-left-color:#28a745; }
+		.pos-accent-red    { border-left-color:#dc3545; }
 		.pos-sum-kpi-label { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted,#8d99a6); margin-bottom:4px; }
 		.pos-sum-kpi-value { font-size:17px; font-weight:600; }
 		.pos-sum-progress-track { margin-top:8px; height:6px; border-radius:4px; background:var(--gray-200,#e9ecef); overflow:hidden; }
 		.pos-sum-progress-fill { height:100%; border-radius:4px; }
-		.pos-fill-teal{background:#17a2b8;} .pos-fill-orange{background:#ffa00a;} .pos-fill-green{background:#28a745;}
+		.pos-fill-teal   { background:#17a2b8; }
+		.pos-fill-orange { background:#ffa00a; }
+		.pos-fill-green  { background:#28a745; }
 		.pos-sum-note { font-size:12px; color:var(--text-muted,#8d99a6); margin-bottom:18px; padding:6px 0; }
 		.pos-shared-tag, .pos-source-tag { display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; padding:1px 6px; border-radius:8px; margin-left:6px; background:#fde8cf; color:#b15c00; }
 		.pos-source-tag { margin-left:0; background:var(--gray-200,#e9ecef); color:var(--text-muted,#8d99a6); }
@@ -829,7 +834,9 @@ function pos_style_block() {
 		.pos-sum-table tr:last-child td { border-bottom:none; }
 		.pos-sum-table tr:hover td { background:var(--gray-50,#f7f8fa); }
 		.text-right { text-align:right; }
-		.pos-sum-cell-title { font-weight:500; } .pos-sum-cell-sub { font-size:11px; color:var(--text-muted,#8d99a6); } .pos-sum-cell-strong { font-weight:600; }
+		.pos-sum-cell-title { font-weight:500; }
+		.pos-sum-cell-sub { font-size:11px; color:var(--text-muted,#8d99a6); }
+		.pos-sum-cell-strong { font-weight:600; }
 		.pos-sum-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:500; white-space:nowrap; }
 		.pos-sum-badge-lg { padding:4px 12px; font-size:12px; border-radius:12px; }
 		.pos-sum-empty { text-align:center; padding:24px; color:var(--text-muted,#8d99a6); border:1px dashed var(--border-color,#d1d8dd); border-radius:8px; }
