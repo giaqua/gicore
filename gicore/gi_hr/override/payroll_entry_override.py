@@ -1,11 +1,64 @@
 # your_app/payroll/payroll_entry_override.py
 import frappe
+from frappe import _
 from frappe.utils import flt
 from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 
 
 class CustomPayrollEntry(PayrollEntry):
 
+
+    @frappe.whitelist()
+    def recreate_accrual_jv(self):
+        self.check_permission("write")
+
+        if self.docstatus != 1:
+            frappe.throw(_("Payroll Entry must be submitted to recreate the accrual Journal Entry"))
+
+        salary_slips = frappe.get_all(
+            "Salary Slip",
+            filters={"payroll_entry": self.name, "docstatus": 1},
+            fields=["name", "journal_entry"],
+        )
+
+        if not salary_slips:
+            frappe.throw(_("No submitted Salary Slips found against this Payroll Entry"))
+
+        existing_jvs = list({ss.journal_entry for ss in salary_slips if ss.journal_entry})
+
+        if not existing_jvs:
+            frappe.throw(_("No existing accrual Journal Entry found to recreate"))
+
+        # cancel the old accrual JV(s)
+        for jv_name in existing_jvs:
+            je = frappe.get_doc("Journal Entry", jv_name)
+            if je.docstatus == 1:
+                je.cancel()
+
+        # unlink so make_accrual_jv_entry / set_journal_entry_in_salary_slips can set it fresh
+        frappe.db.set_value(
+            "Salary Slip",
+            {"payroll_entry": self.name, "docstatus": 1},
+            "journal_entry",
+            "",
+        )
+
+        submitted_slips = frappe.get_all(
+            "Salary Slip",
+            filters={"payroll_entry": self.name, "docstatus": 1},
+            fields=["name"],
+        )
+
+        self.make_accrual_jv_entry(submitted_slips)
+
+        frappe.msgprint(
+            _("Accrual Journal Entry recreated with updated party accounting"),
+            alert=True,
+            indicator="green",
+        )
+
+
+        
     def get_component_party(self, salary_component, employee):
         """Returns (party_type, party) if the component is flagged, else (None, None).
         Party is always resolved from the current row's employee — never fixed on the
