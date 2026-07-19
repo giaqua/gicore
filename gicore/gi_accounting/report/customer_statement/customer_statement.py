@@ -1,5 +1,4 @@
-# Copyright (c) 2026, GI Aqua Tech and contributors
-# For license information, please see license.txt
+# Copyright (c) 2026, HM
 
 import frappe
 from frappe import _
@@ -19,6 +18,7 @@ def run(filters, party_type):
 	data = get_statement_data(
 		party_type, filters.get(party_key), filters.company,
 		filters.from_date, filters.to_date,
+		hide_reconciled=filters.get("hide_reconciled") or 0,
 	)
 
 	charge_label = _("Charges (Dr)") if party_type == "Customer" else _("Charges (Cr)")
@@ -65,5 +65,7 @@ def run(filters, party_type):
 		frappe.utils.fmt_money(a["b4"], currency=data.currency),
 		frappe.utils.fmt_money(a["total"], currency=data.currency),
 	)
+	if data.hide_reconciled:
+		message = _("Open Items only — fully reconciled transactions are hidden. ") + message
 
 	return columns, rows, message

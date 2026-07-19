@@ -31,6 +31,12 @@ frappe.query_reports["Customer Statement"] = {
 			default: frappe.datetime.get_today(),
 			reqd: 1,
 		},
+		{
+			fieldname: "hide_reconciled",
+			label: __("Hide Reconciled Transactions (Open Items Only)"),
+			fieldtype: "Check",
+			default: 0,
+		},
 	],
 
 	onload: function (report) {
@@ -63,6 +69,7 @@ hm_statements.open_statement_print = function (report, party_type, as_pdf) {
 		from_date: f.from_date,
 		to_date: f.to_date,
 		as_pdf: as_pdf ? 1 : 0,
+		hide_reconciled: f.hide_reconciled ? 1 : 0,
 	});
 	window.open(
 		"/api/method/gicore.gi_accounting.api.statements_api.statement_print?" + params.toString(),

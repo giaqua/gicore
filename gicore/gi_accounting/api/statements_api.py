@@ -1,5 +1,4 @@
-# Copyright (c) 2026, GI Aqua Tech and contributors
-# For license information, please see license.txt
+# Copyright (c) 2026, HM
 
 import frappe
 from frappe import _
@@ -12,7 +11,7 @@ TEMPLATE = "gicore/gi_accounting/templates/statement_of_account.html"
 
 
 @frappe.whitelist()
-def statement_print(party_type, party, company, from_date, to_date, as_pdf=0):
+def statement_print(party_type, party, company, from_date, to_date, as_pdf=0, hide_reconciled=0):
 	"""Render a professional IFRS-style Statement of Account.
 
 	Opens as printable HTML in a new tab, or downloads as PDF when as_pdf=1.
@@ -23,7 +22,10 @@ def statement_print(party_type, party, company, from_date, to_date, as_pdf=0):
 	if not frappe.has_permission(party_type, "read", party):
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
-	data = get_statement_data(party_type, party, company, from_date, to_date)
+	data = get_statement_data(
+		party_type, party, company, from_date, to_date,
+		hide_reconciled=hide_reconciled,
+	)
 
 	html = frappe.render_template(
 		TEMPLATE,

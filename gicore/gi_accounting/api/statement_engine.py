@@ -29,21 +29,63 @@ def get_party_config(party_type):
 	}
 
 
-def get_opening_balance(party_type, party, company, from_date):
+def get_opening_balance(party_type, party, company, from_date, open_refs=None):
 	cfg = get_party_config(party_type)
-	row = frappe.db.sql(
+	if open_refs is None:
+		row = frappe.db.sql(
+			"""
+			SELECT COALESCE(SUM(debit - credit), 0) AS bal
+			FROM `tabGL Entry`
+			WHERE party_type = %s AND party = %s AND company = %s
+				AND posting_date < %s AND is_cancelled = 0
+			""",
+			(party_type, party, company, from_date),
+		)
+		return flt(row[0][0]) * cfg["sign"] if row else 0.0
+
+	# Open-items mode: opening = pre-period movement of still-open references
+	# only, so that Opening + shown transactions ties exactly to Outstanding.
+	if not open_refs:
+		return 0.0
+	rows = frappe.db.sql(
 		"""
-		SELECT COALESCE(SUM(debit - credit), 0) AS bal
-		FROM `tabGL Entry`
-		WHERE party_type = %s AND party = %s AND company = %s
-			AND posting_date < %s AND is_cancelled = 0
+		SELECT
+			COALESCE(NULLIF(gle.against_voucher, ''), gle.voucher_no) AS ref,
+			SUM(gle.debit - gle.credit) AS net
+		FROM `tabGL Entry` gle
+		WHERE gle.party_type = %s AND gle.party = %s AND gle.company = %s
+			AND gle.posting_date < %s AND gle.is_cancelled = 0
+		GROUP BY ref
 		""",
 		(party_type, party, company, from_date),
+		as_dict=True,
 	)
-	return flt(row[0][0]) * cfg["sign"] if row else 0.0
+	return sum(flt(r.net) for r in rows if r.ref in open_refs) * cfg["sign"]
 
 
-def get_transactions(party_type, party, company, from_date, to_date):
+def get_open_refs(party_type, party, company, as_on):
+	"""References (invoices / standalone vouchers) NOT fully reconciled as on date.
+
+	A reference is 'reconciled' when its GL net (grouped by against_voucher,
+	falling back to voucher_no) is ~0, i.e. fully knocked off by payments,
+	credit/debit notes or JE allocations.
+	"""
+	rows = frappe.db.sql(
+		"""
+		SELECT
+			COALESCE(NULLIF(gle.against_voucher, ''), gle.voucher_no) AS ref
+		FROM `tabGL Entry` gle
+		WHERE gle.party_type = %s AND gle.party = %s AND gle.company = %s
+			AND gle.posting_date <= %s AND gle.is_cancelled = 0
+		GROUP BY ref
+		HAVING ABS(SUM(gle.debit - gle.credit)) > 0.005
+		""",
+		(party_type, party, company, as_on),
+	)
+	return {r[0] for r in rows}
+
+
+def get_transactions(party_type, party, company, from_date, to_date, open_refs=None):
 	cfg = get_party_config(party_type)
 	entries = frappe.db.sql(
 		"""
@@ -61,8 +103,19 @@ def get_transactions(party_type, party, company, from_date, to_date):
 		as_dict=True,
 	)
 
+	if open_refs is not None:
+		# Open-items mode: keep only entries whose reference chain is still
+		# unreconciled as on to_date (fully knocked-off vouchers are hidden)
+		entries = [
+			e for e in entries
+			if (e.against_voucher or e.voucher_no) in open_refs
+		]
+
 	rows = []
-	balance = get_opening_balance(party_type, party, company, from_date)
+	balance = get_opening_balance(
+		party_type, party, company, from_date,
+		open_refs=open_refs,
+	)
 
 	for e in entries:
 		amount = flt(e.debit) - flt(e.credit)
@@ -125,10 +178,15 @@ def get_ageing(party_type, party, company, as_on):
 	return buckets
 
 
-def get_statement_data(party_type, party, company, from_date, to_date):
+def get_statement_data(party_type, party, company, from_date, to_date, hide_reconciled=0):
 	cfg = get_party_config(party_type)
-	opening = get_opening_balance(party_type, party, company, from_date)
-	rows = get_transactions(party_type, party, company, from_date, to_date)
+	open_refs = (
+		get_open_refs(party_type, party, company, to_date)
+		if frappe.utils.cint(hide_reconciled)
+		else None
+	)
+	opening = get_opening_balance(party_type, party, company, from_date, open_refs=open_refs)
+	rows = get_transactions(party_type, party, company, from_date, to_date, open_refs=open_refs)
 	total_charges = sum(r.charge for r in rows)
 	total_settlements = sum(r.settlement for r in rows)
 	closing = rows[-1].balance if rows else opening
@@ -162,4 +220,5 @@ def get_statement_data(party_type, party, company, from_date, to_date):
 		total_settlements=total_settlements,
 		closing_balance=closing,
 		ageing=ageing,
+		hide_reconciled=frappe.utils.cint(hide_reconciled),
 	)
