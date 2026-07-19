@@ -255,3 +255,7 @@ app_include_js = [
     # "/assets/gicore/js/report_issue_widget.js"
     # other js files...
 ]
+
+override_doctype_class = {
+    "Payroll Entry": "gicore.gi_hr.override.payroll_entry_override.CustomPayrollEntry"
+}
