@@ -55,8 +55,27 @@ frappe.query_reports["Bank Statement"] = {
             }
         },
         {
+            fieldname: "voucher_type",
+            label: "Voucher Type",
+            fieldtype: "Select",
+            options: [
+                "", "Journal Entry", "Payment Entry", "Sales Invoice",
+                "Purchase Invoice", "Expense Claim", "Bank Reconciliation Statement"
+            ].join("\n")
+        },
+        {
             fieldname: "voucher_no",
             label: "Voucher No",
+            fieldtype: "Data"
+        },
+        {
+            fieldname: "reference_no",
+            label: "Reference No",
+            fieldtype: "Data"
+        },
+        {
+            fieldname: "remarks",
+            label: "Remarks",
             fieldtype: "Data"
         }
     ],
@@ -67,5 +86,22 @@ frappe.query_reports["Bank Statement"] = {
             value = "<b>" + value + "</b>";
         }
         return value;
+    },
+
+    "onload": function (report) {
+        report.page.add_inner_button(__("Download PDF"), function () {
+            var filters = report.get_values();
+
+            if (!filters.account || !filters.company || !filters.from_date || !filters.to_date) {
+                frappe.msgprint(__("Please set Company, Bank Account, From Date and To Date before downloading."));
+                return;
+            }
+
+            var params = $.param(filters);
+            var url = frappe.urllib.get_full_url(
+                "/api/method/gicore.gi_accounting.report.bank_statement.bank_statement.download_bank_statement_pdf?" + params
+            );
+            window.open(url);
+        });
     }
 };
