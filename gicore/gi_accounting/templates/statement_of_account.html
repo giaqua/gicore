@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ d.config.party_type }} Statement — {{ d.party_name }}</title>
+<style>
+	:root {
+		--hm-blue: #010BCE;
+		--hm-red: #D50000;
+		--ink: #17181c;
+		--muted: #6b7080;
+		--line: #dfe2ea;
+		--soft: #f5f6fb;
+	}
+	* { box-sizing: border-box; }
+	body {
+		font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+		color: var(--ink);
+		margin: 0;
+		padding: 28px 34px;
+		font-size: 12.5px;
+		line-height: 1.45;
+	}
+	.topbar {
+		border-top: 4px solid var(--hm-blue);
+		border-bottom: 1px solid var(--line);
+		padding: 14px 0 12px;
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+	}
+	.company-name { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+	.company-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+	.doc-title { text-align: right; }
+	.doc-title h1 {
+		margin: 0; font-size: 17px; font-weight: 700;
+		color: var(--hm-blue); text-transform: uppercase; letter-spacing: 1.2px;
+	}
+	.doc-title .ar { font-size: 13px; color: var(--muted); margin-top: 2px; }
+	.doc-title .ifrs { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+
+	.meta-grid {
+		display: flex; gap: 14px; margin: 16px 0 18px;
+	}
+	.meta-card {
+		flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px;
+	}
+	.meta-card .label {
+		font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
+		color: var(--muted); margin-bottom: 4px;
+	}
+	.meta-card .value { font-weight: 600; font-size: 13px; }
+	.meta-card .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+	.summary {
+		display: flex; border: 1px solid var(--line); border-radius: 6px;
+		overflow: hidden; margin-bottom: 18px;
+	}
+	.summary .cell {
+		flex: 1; padding: 10px 14px; border-right: 1px solid var(--line);
+		background: var(--soft);
+	}
+	.summary .cell:last-child { border-right: 0; background: var(--hm-blue); color: #fff; }
+	.summary .cell:last-child .k { color: rgba(255,255,255,.75); }
+	.summary .k {
+		font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
+		color: var(--muted); margin-bottom: 3px;
+	}
+	.summary .v { font-weight: 700; font-size: 14px; white-space: nowrap; }
+
+	table.tx { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+	table.tx th {
+		background: var(--ink); color: #fff; font-size: 10.5px;
+		text-transform: uppercase; letter-spacing: .6px;
+		padding: 7px 8px; text-align: left;
+	}
+	table.tx th.num, table.tx td.num { text-align: right; }
+	table.tx td {
+		padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top;
+	}
+	table.tx tr.opening td, table.tx tr.closing td {
+		background: var(--soft); font-weight: 700;
+	}
+	table.tx tr.closing td { border-top: 2px solid var(--hm-blue); }
+	.vno { color: var(--hm-blue); font-weight: 600; }
+	.remarks { color: var(--muted); font-size: 11px; }
+
+	h3.section {
+		font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+		color: var(--hm-blue); border-bottom: 1px solid var(--line);
+		padding-bottom: 5px; margin: 20px 0 10px;
+	}
+	table.ageing { width: 100%; border-collapse: collapse; }
+	table.ageing th {
+		background: var(--soft); border: 1px solid var(--line);
+		font-size: 10.5px; padding: 6px; text-transform: uppercase; letter-spacing: .5px;
+	}
+	table.ageing td {
+		border: 1px solid var(--line); padding: 8px 6px;
+		text-align: center; font-weight: 600;
+	}
+	table.ageing td.total { background: var(--hm-blue); color: #fff; }
+
+	.note {
+		margin-top: 16px; padding: 10px 14px; background: var(--soft);
+		border-left: 3px solid var(--hm-blue); border-radius: 0 6px 6px 0;
+		font-size: 10.5px; color: var(--muted);
+	}
+	.sig-row { display: flex; gap: 40px; margin-top: 38px; }
+	.sig { flex: 1; border-top: 1px solid var(--ink); padding-top: 5px; font-size: 11px; color: var(--muted); }
+	.footer {
+		margin-top: 26px; border-top: 1px solid var(--line); padding-top: 8px;
+		display: flex; justify-content: space-between;
+		font-size: 10px; color: var(--muted);
+	}
+	.footer .brand { color: var(--hm-blue); font-weight: 600; }
+	@media print {
+		body { padding: 0; }
+		.no-print { display: none; }
+	}
+	.print-btn {
+		position: fixed; top: 14px; right: 14px; background: var(--hm-blue);
+		color: #fff; border: 0; border-radius: 6px; padding: 9px 18px;
+		font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(1,11,206,.3);
+	}
+</style>
+</head>
+<body>
+<button class="print-btn no-print" onclick="window.print()">🖨 Print</button>
+
+<div class="topbar">
+	<div>
+		<div class="company-name">{{ d.company }}</div>
+		<div class="company-meta">
+			{% if d.company_tax_id %}VAT Reg. No. (TRN): {{ d.company_tax_id }}{% endif %}
+		</div>
+	</div>
+	<div class="doc-title">
+		<h1>Statement of Account</h1>
+		<div class="ar">كشف حساب</div>
+		<div class="ifrs">Presented in accordance with IFRS — {{ d.config.ifrs_caption }}</div>
+	</div>
+</div>
+
+<div class="meta-grid">
+	<div class="meta-card">
+		<div class="label">{{ d.config.party_type }} / {% if d.config.party_type == "Customer" %}العميل{% else %}المورد{% endif %}</div>
+		<div class="value">{{ d.party_name }}</div>
+		<div class="sub">Code: {{ d.party }}{% if d.party_tax_id %} · TRN: {{ d.party_tax_id }}{% endif %}</div>
+	</div>
+	<div class="meta-card">
+		<div class="label">Statement Period / فترة الكشف</div>
+		<div class="value">{{ fdate(d.from_date) }} — {{ fdate(d.to_date) }}</div>
+		<div class="sub">Currency: {{ d.currency }}</div>
+	</div>
+	<div class="meta-card">
+		<div class="label">Generated / تاريخ الإصدار</div>
+		<div class="value">{{ generated_on }}</div>
+		<div class="sub">Basis: General Ledger (submitted entries only)</div>
+	</div>
+</div>
+
+<div class="summary">
+	<div class="cell">
+		<div class="k">Opening Balance / الرصيد الافتتاحي</div>
+		<div class="v">{{ fmt(d.opening_balance) }}</div>
+	</div>
+	<div class="cell">
+		<div class="k">{% if d.config.party_type == "Customer" %}Invoiced / Charges{% else %}Billed / Charges{% endif %}</div>
+		<div class="v">{{ fmt(d.total_charges) }}</div>
+	</div>
+	<div class="cell">
+		<div class="k">{% if d.config.party_type == "Customer" %}Receipts &amp; Credits{% else %}Payments &amp; Debits{% endif %}</div>
+		<div class="v">{{ fmt(d.total_settlements) }}</div>
+	</div>
+	<div class="cell">
+		<div class="k">Closing Balance / الرصيد الختامي</div>
+		<div class="v">{{ fmt(d.closing_balance) }}</div>
+	</div>
+</div>
+
+<table class="tx">
+	<thead>
+		<tr>
+			<th style="width:80px">Date</th>
+			<th style="width:110px">Voucher Type</th>
+			<th style="width:150px">Voucher No</th>
+			<th>Particulars</th>
+			<th class="num" style="width:100px">{% if d.config.party_type == "Customer" %}Debit{% else %}Credit{% endif %}</th>
+			<th class="num" style="width:100px">{% if d.config.party_type == "Customer" %}Credit{% else %}Debit{% endif %}</th>
+			<th class="num" style="width:110px">Balance</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr class="opening">
+			<td>{{ fdate(d.from_date) }}</td>
+			<td colspan="3">Opening Balance — brought forward</td>
+			<td class="num">—</td>
+			<td class="num">—</td>
+			<td class="num">{{ fmt(d.opening_balance) }}</td>
+		</tr>
+		{% for r in d.rows %}
+		<tr>
+			<td>{{ fdate(r.posting_date) }}</td>
+			<td>{{ r.voucher_type }}</td>
+			<td class="vno">{{ r.voucher_no }}</td>
+			<td>
+				{% if r.reference %}<span class="vno">Ref: {{ r.reference }}</span><br>{% endif %}
+				<span class="remarks">{{ r.remarks }}</span>
+			</td>
+			<td class="num">{{ fmt(r.charge) if r.charge else "—" }}</td>
+			<td class="num">{{ fmt(r.settlement) if r.settlement else "—" }}</td>
+			<td class="num">{{ fmt(r.balance) }}</td>
+		</tr>
+		{% endfor %}
+		<tr class="closing">
+			<td>{{ fdate(d.to_date) }}</td>
+			<td colspan="3">Closing Balance — carried forward</td>
+			<td class="num">{{ fmt(d.total_charges) }}</td>
+			<td class="num">{{ fmt(d.total_settlements) }}</td>
+			<td class="num">{{ fmt(d.closing_balance) }}</td>
+		</tr>
+	</tbody>
+</table>
+
+<h3 class="section">Ageing Analysis / تحليل أعمار الديون &nbsp;·&nbsp; as on {{ fdate(d.to_date) }}</h3>
+<table class="ageing">
+	<thead>
+		<tr>
+			<th>Current (0–30)</th>
+			<th>31–60 Days</th>
+			<th>61–90 Days</th>
+			<th>91–120 Days</th>
+			<th>Over 120 Days</th>
+			<th>Total Outstanding</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>{{ fmt(d.ageing.b0) }}</td>
+			<td>{{ fmt(d.ageing.b1) }}</td>
+			<td>{{ fmt(d.ageing.b2) }}</td>
+			<td>{{ fmt(d.ageing.b3) }}</td>
+			<td>{{ fmt(d.ageing.b4) }}</td>
+			<td class="total">{{ fmt(d.ageing.total) }}</td>
+		</tr>
+	</tbody>
+</table>
+
+<div class="note">
+	<b>Basis of preparation:</b> This statement is derived from the entity's general ledger and reflects
+	{% if d.config.party_type == "Customer" %}trade receivables measured at amortised cost in accordance with IFRS 9 and presented per IAS 1{% else %}trade payables recognised as financial liabilities at amortised cost in accordance with IFRS 9 and presented per IAS 1{% endif %}.
+	Balances exclude cancelled and draft vouchers. Ageing is computed on open items netted by reference voucher.
+	Amounts are stated in {{ d.currency }}. Please report any discrepancy within 15 days of the statement date.
+</div>
+
+<div class="sig-row">
+	<div class="sig">Prepared by / أعد بواسطة</div>
+	<div class="sig">Reviewed by / روجع بواسطة</div>
+	<div class="sig">{{ d.config.party_type }} Acknowledgement / الإقرار</div>
+</div>
+
+<div class="footer">
+	<div>{{ d.company }} — Statement of Account · {{ fdate(d.from_date) }} to {{ fdate(d.to_date) }}</div>
+	<div class="brand">HM Statements</div>
+</div>
+</body>
+</html>
