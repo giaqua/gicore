@@ -1,0 +1,120 @@
+/* Navbar button */
+.gi-vm-btn {
+    margin-left: 8px;
+    margin-top: 8px;
+    border-radius: 20px !important;
+    border: 1px solid #010BCE !important;
+    color: #010BCE !important;
+    font-weight: 500;
+    font-size: 12.5px;
+    padding: 4px 14px !important;
+    background: #fff !important;
+    transition: all 0.2s ease;
+}
+.gi-vm-btn:hover {
+    background: #010BCE !important;
+    color: #fff !important;
+}
+.gi-vm-btn-icon { margin-right: 4px; }
+
+/* Dialog content */
+.gi-vm-wrap {
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    margin: -20px;
+}
+.gi-vm-header {
+    background: linear-gradient(135deg, #010BCE 0%, #3b3ff0 100%);
+    color: #fff;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-radius: 6px 6px 0 0;
+}
+.gi-vm-header-icon {
+    font-size: 34px;
+    background: rgba(255,255,255,0.15);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gi-vm-header-title { font-size: 19px; font-weight: 600; }
+.gi-vm-header-title-ar {
+    font-size: 15px;
+    opacity: 0.85;
+    font-family: 'Amiri', 'Noto Naskh Arabic', sans-serif;
+}
+
+.gi-vm-body {
+    display: flex;
+    padding: 28px 32px 32px;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+.gi-vm-divider {
+    width: 1px;
+    background: #eaeaf5;
+    align-self: stretch;
+}
+.gi-vm-card {
+    flex: 1;
+    min-width: 260px;
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: #333;
+}
+.gi-vm-card[dir="rtl"] {
+    font-family: 'Amiri', 'Noto Naskh Arabic', sans-serif;
+    text-align: right;
+}
+.gi-vm-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    margin-top: 18px;
+}
+.gi-vm-label:first-child { margin-top: 0; }
+.gi-vm-label-vision {
+    background: rgba(1,11,206,0.1);
+    color: #010BCE;
+}
+.gi-vm-label-mission {
+    background: rgba(213,0,0,0.08);
+    color: #D50000;
+}
+.gi-vm-rich-content p {
+    margin: 0 0 8px;
+}
+.gi-vm-rich-content p:last-child {
+    margin-bottom: 0;
+}
+.gi-vm-rich-content strong { color: inherit; }
+.gi-vm-rich-content ul, .gi-vm-rich-content ol {
+    padding-inline-start: 20px;
+    margin: 6px 0;
+}
+.gi-vm-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    object-fit: contain;
+    padding: 6px;
+}
+/* .gi-vm-login-card {
+    max-width: 700px;
+    margin: 16px auto 0;
+    padding: 16px 20px;
+    background: #f5f6ff;
+    border-radius: 8px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+} */

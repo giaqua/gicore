@@ -251,6 +251,8 @@ app_license = "mit"
 app_include_js = [
     # "custom_notifications.js",
     "/assets/gicore/js/report_issue_v2.js",
+    "/assets/gicore/js/vision_mission_banner.js",
+    # "/assets/gicore/js/login_vm.js"
     # "/assets/gicore/js/lib/html2canvas.min.js",
     # "/assets/gicore/js/report_issue_widget.js"
     # other js files...
@@ -259,3 +261,5 @@ app_include_js = [
 override_doctype_class = {
     "Payroll Entry": "gicore.gi_hr.override.payroll_entry_override.CustomPayrollEntry"
 }
+
+app_include_css = ["/assets/gicore/css/vision_mission_banner.css"]

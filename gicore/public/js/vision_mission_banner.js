@@ -17,7 +17,7 @@
             return;
         }
         frappe.db.get_value('Company', company,
-            ['custom_show_vision_mission as show_vision_mission', 'custom_vision_en as vision_en', 'custom_vision_ar as vision_ar', 'custom_mission_en as mission_en', 'custom_mission_ar as mission_ar'],
+            ['custom_show_vision_mission as show_vision_mission', 'custom_vision_en as vision_en', 'custom_vision_ar as vision_ar', 'custom_mission_en as mission_en', 'custom_mission_ar as mission_ar','custom_vision_mission_logo as vision_mission_logo'],
             (r) => {
                 vmDataCache = r;
                 callback(r);
@@ -25,7 +25,12 @@
         );
     }
 
+
     function showVMDialog(data) {
+        const logoHtml = data.vision_mission_logo
+            ? `<img src="${data.vision_mission_logo}" class="gi-vm-logo" />`
+            : `<div class="gi-vm-header-icon">💧</div>`;
+
         const d = new frappe.ui.Dialog({
             title: '',
             size: 'large',
@@ -36,25 +41,25 @@
                     options: `
                     <div class="gi-vm-wrap">
                         <div class="gi-vm-header">
-                            <div class="gi-vm-header-icon">💧</div>
+                            ${logoHtml}
                             <div>
                                 <div class="gi-vm-header-title">Vision & Mission</div>
                                 <div class="gi-vm-header-title-ar">الرؤية والرسالة</div>
                             </div>
                         </div>
                         <div class="gi-vm-body">
-                            <div class="gi-vm-card" dir="ltr">
+                            <div class="gi-vm-card gi-vm-rich" dir="ltr">
                                 <div class="gi-vm-label gi-vm-label-vision">VISION</div>
-                                <p>${frappe.utils.escape_html(data.vision_en || '')}</p>
+                                <div class="gi-vm-rich-content">${data.vision_en || ''}</div>
                                 <div class="gi-vm-label gi-vm-label-mission">MISSION</div>
-                                <p>${frappe.utils.escape_html(data.mission_en || '')}</p>
+                                <div class="gi-vm-rich-content">${data.mission_en || ''}</div>
                             </div>
                             <div class="gi-vm-divider"></div>
-                            <div class="gi-vm-card" dir="rtl">
+                            <div class="gi-vm-card gi-vm-rich" dir="rtl">
                                 <div class="gi-vm-label gi-vm-label-vision">الرؤية</div>
-                                <p>${frappe.utils.escape_html(data.vision_ar || '')}</p>
+                                <div class="gi-vm-rich-content">${data.vision_ar || ''}</div>
                                 <div class="gi-vm-label gi-vm-label-mission">الرسالة</div>
-                                <p>${frappe.utils.escape_html(data.mission_ar || '')}</p>
+                                <div class="gi-vm-rich-content">${data.mission_ar || ''}</div>
                             </div>
                         </div>
                     </div>`
