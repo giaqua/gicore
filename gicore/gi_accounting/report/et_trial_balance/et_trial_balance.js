@@ -231,6 +231,83 @@ frappe.query_reports["ET Trial Balance"] = {
 	initial_depth: 3,
 
 	onload: function (report) {
+		report.page.add_inner_button(
+			__("Print / Export"),
+			function () {
+				const f = report.get_values();
+				if (!f.company || !f.from_date || !f.to_date) {
+					frappe.msgprint(__("Please set Company, From Date and To Date first."));
+					return;
+				}
+
+				const dialog = new frappe.ui.Dialog({
+					title: __("Print ET Trial Balance"),
+					fields: [
+						{
+							fieldname: "print_design",
+							label: __("Print Design"),
+							fieldtype: "Select",
+							options: [
+								{ label: __("Standard"), value: "standard" },
+								{ label: __("Detailed (with transactions)"), value: "detailed" },
+								{ label: __("Executive Summary"), value: "summary" },
+							],
+							default: "standard",
+							reqd: 1,
+						},
+						{
+							fieldname: "language",
+							label: __("Language"),
+							fieldtype: "Select",
+							options: [
+								{ label: __("English"), value: "en" },
+								{ label: __("Arabic"), value: "ar" },
+							],
+							default: "en",
+							reqd: 1,
+						},
+					],
+					primary_action_label: __("Print Preview"),
+					primary_action: function (values) {
+						const printWindow = window.open("", "_blank");
+
+						frappe.call({
+							method: "gicore.gi_accounting.report.et_trial_balance.et_trial_balance.get_print_html",
+							args: {
+								filters: JSON.stringify(f),
+								print_design: values.print_design,
+								language: values.language,
+							},
+							freeze: true,
+							callback: function (r) {
+								if (!r.message) return;
+								printWindow.document.write(r.message);
+								printWindow.document.close();
+								printWindow.focus();
+								printWindow.print();
+							},
+						});
+						dialog.hide();
+					},
+					secondary_action_label: __("Download PDF"),
+					secondary_action: function (values) {
+						const params = new URLSearchParams({
+							filters: JSON.stringify(f),
+							print_design: values.print_design,
+							language: values.language,
+						});
+						window.open(
+							`/api/method/gicore.gi_accounting.report.et_trial_balance.et_trial_balance.download_pdf?${params.toString()}`,
+							"_blank"
+						);
+						dialog.hide();
+					},
+				});
+				dialog.show();
+			},
+			__("Actions")
+		);
+
 		$(report.page.wrapper).on("click", ".et-tb-eye", function () {
 			const account = $(this).attr("data-account");
 			const f = report.get_values();
@@ -256,8 +333,6 @@ frappe.query_reports["ET Trial Balance"] = {
 				},
 				freeze: true,
 				callback: function (r) {
-					console.log(r);
-					
 					const rows = r.message || [];
 
 					let html = `<div style="max-height:60vh;overflow:auto;">

@@ -519,6 +519,7 @@ def prepare_data(accounts, filters, parent_children_map, company_currency):
 			"indent": d.indent,
 			"is_group": d.is_group,
 			"account_type": d.account_type,
+			"root_type": d.root_type,
 			"from_date": filters.from_date,
 			"to_date": filters.to_date,
 			"currency": company_currency,
@@ -649,7 +650,6 @@ def get_account_transactions(
 		"posting_date": ["between", [from_date, to_date]],
 		"is_cancelled": 0,
 	}
-	# print("get_account_transactions filters:", filters, " party_type:", party_type, " party:", party, " cost_center:", cost_center[0],len(cost_center), " project:", project,len(project), " voucher_type:", voucher_type, " voucher_no:", voucher_no)
 	if party_type:
 		filters["party_type"] = party_type
 	if party:
@@ -658,12 +658,13 @@ def get_account_transactions(
 		filters["cost_center"] = cost_center
 	if project and len(project) > 0 and project[0] != "[":
 		filters["project"] = project
+
 	if voucher_type:
 		filters["voucher_type"] = voucher_type
 	if voucher_no:
 		filters["voucher_no"] = voucher_no
 
-	account_transactions =  frappe.get_all(
+	account_transactions = frappe.get_all(
 		"GL Entry",
 		filters=filters,
 		fields=[
@@ -682,5 +683,388 @@ def get_account_transactions(
 		],
 		order_by="posting_date asc, creation asc",
 	)
-	# print("get_account_transactions account_transactions:", account_transactions," filters:", filters)
+
 	return account_transactions
+
+
+# ----------------------------------------------------------------------
+# Print designs — three layouts, bilingual EN/AR, HM brand colors.
+# Rendered server-side as plain HTML (no Print Format doctype needed
+# since this is a script report, not a submittable document).
+# ----------------------------------------------------------------------
+
+import json
+
+from frappe.utils.pdf import get_pdf
+
+HM_BLUE = "#010BCE"
+HM_RED = "#D50000"
+
+LABELS = {
+	"en": {
+		"title": "Trial Balance",
+		"account": "Account",
+		"opening_dr": "Opening (Dr)",
+		"opening_cr": "Opening (Cr)",
+		"debit": "Debit",
+		"credit": "Credit",
+		"closing_dr": "Closing (Dr)",
+		"closing_cr": "Closing (Cr)",
+		"total": "Total",
+		"period": "Period",
+		"company": "Company",
+		"from": "From",
+		"to": "To",
+		"assets": "Assets",
+		"liabilities": "Liabilities",
+		"equity": "Equity",
+		"income": "Income",
+		"expense": "Expense",
+		"net_income": "Net Income",
+		"date": "Date",
+		"voucher": "Voucher No",
+		"voucher_type": "Voucher Type",
+		"party": "Party",
+	},
+	"ar": {
+		"title": "ميزان المراجعة",
+		"account": "الحساب",
+		"opening_dr": "افتتاحي (مدين)",
+		"opening_cr": "افتتاحي (دائن)",
+		"debit": "مدين",
+		"credit": "دائن",
+		"closing_dr": "ختامي (مدين)",
+		"closing_cr": "ختامي (دائن)",
+		"total": "الإجمالي",
+		"period": "الفترة",
+		"company": "الشركة",
+		"from": "من",
+		"to": "إلى",
+		"assets": "الأصول",
+		"liabilities": "الالتزامات",
+		"equity": "حقوق الملكية",
+		"income": "الإيرادات",
+		"expense": "المصروفات",
+		"net_income": "صافي الدخل",
+		"date": "التاريخ",
+		"voucher": "رقم المستند",
+		"voucher_type": "نوع المستند",
+		"party": "الطرف",
+	},
+}
+
+ROOT_TYPE_LABEL_KEY = {
+	"Asset": "assets",
+	"Liability": "liabilities",
+	"Equity": "equity",
+	"Income": "income",
+	"Expense": "expense",
+}
+
+
+def _base_css(is_ar):
+	align = "right" if is_ar else "left"
+	opp_align = "left" if is_ar else "right"
+	return f"""
+		body {{
+			font-family: {"'Tahoma','Arial',sans-serif" if is_ar else "'Segoe UI','Arial',sans-serif"};
+			color: #1a1a1a;
+			margin: 24px;
+			font-size: 12px;
+		}}
+		.et-header {{
+			border-bottom: 3px solid {HM_BLUE};
+			padding-bottom: 10px;
+			margin-bottom: 16px;
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+		}}
+		.et-header h1 {{
+			color: {HM_BLUE};
+			font-size: 20px;
+			margin: 0 0 4px 0;
+		}}
+		.et-header .meta {{
+			font-size: 11px;
+			color: #444;
+			text-align: {opp_align};
+		}}
+		table.et-table {{
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 8px;
+		}}
+		table.et-table th {{
+			background: {HM_BLUE};
+			color: #fff;
+			padding: 6px 8px;
+			font-size: 11px;
+			text-align: {opp_align};
+		}}
+		table.et-table th:first-child, table.et-table td:first-child {{
+			text-align: {align};
+		}}
+		table.et-table td {{
+			padding: 5px 8px;
+			font-size: 11px;
+			border-bottom: 1px solid #e5e5e5;
+			text-align: {opp_align};
+		}}
+		tr.et-group td {{ font-weight: 600; background: #f4f6fb; }}
+		tr.et-total td {{ font-weight: 700; border-top: 2px solid {HM_BLUE}; }}
+		.neg {{ color: {HM_RED}; }}
+		.et-kpis {{ display: flex; gap: 12px; margin: 16px 0; }}
+		.et-kpi {{
+			flex: 1; border: 1px solid #e0e0e0; border-radius: 6px;
+			padding: 10px 12px; text-align: center;
+		}}
+		.et-kpi .label {{ font-size: 10px; color: #777; text-transform: uppercase; }}
+		.et-kpi .value {{ font-size: 16px; font-weight: 700; color: {HM_BLUE}; margin-top: 4px; }}
+		.et-txn-row td {{ background: #fafafa; font-size: 10px; padding-left: 24px; }}
+		@media print {{
+			.no-print {{ display: none; }}
+		}}
+	"""
+
+
+def _fmt(value, currency):
+	value = flt(value)
+	formatted = frappe.utils.fmt_money(value, currency=currency)
+	if value < 0:
+		return f'<span class="neg">{formatted}</span>'
+	return formatted
+
+
+def _header_html(labels, filters, company, is_ar):
+	company_name = company.company_name if company else filters.get("company")
+	trn = getattr(company, "tax_id", None) or ""
+	return f"""
+		<div class="et-header">
+			<div>
+				<h1>{labels['title']}</h1>
+				<div>{company_name}{f" &middot; TRN {trn}" if trn else ""}</div>
+			</div>
+			<div class="meta">
+				{labels['period']}: {formatdate(filters.get('from_date'))} — {formatdate(filters.get('to_date'))}
+			</div>
+		</div>
+	"""
+
+
+def _visible_rows(data):
+	# strip the blank spacer dict the standard report inserts before the total row
+	return [d for d in data if d and d.get("account")]
+
+
+def _render_standard(data, labels, currency, is_ar):
+	rows = _visible_rows(data)
+	body_rows = ""
+	for d in rows:
+		is_total = d["account"].strip("'") == labels["total"] if isinstance(d["account"], str) else False
+		css_class = "et-total" if is_total or d["account"] == "'" + _("Total") + "'" else (
+			"et-group" if d.get("is_group") else ""
+		)
+		indent_px = (d.get("indent", 0) or 0) * 18
+		name = d.get("account_name", d["account"])
+		body_rows += f"""
+			<tr class="{css_class}">
+				<td style="padding-{'right' if is_ar else 'left'}:{indent_px}px">{name}</td>
+				<td>{_fmt(d.get('opening_debit'), currency)}</td>
+				<td>{_fmt(d.get('opening_credit'), currency)}</td>
+				<td>{_fmt(d.get('debit'), currency)}</td>
+				<td>{_fmt(d.get('credit'), currency)}</td>
+				<td>{_fmt(d.get('closing_debit'), currency)}</td>
+				<td>{_fmt(d.get('closing_credit'), currency)}</td>
+			</tr>
+		"""
+	return f"""
+		<table class="et-table">
+			<thead><tr>
+				<th>{labels['account']}</th>
+				<th>{labels['opening_dr']}</th>
+				<th>{labels['opening_cr']}</th>
+				<th>{labels['debit']}</th>
+				<th>{labels['credit']}</th>
+				<th>{labels['closing_dr']}</th>
+				<th>{labels['closing_cr']}</th>
+			</tr></thead>
+			<tbody>{body_rows}</tbody>
+		</table>
+	"""
+
+
+def _render_detailed(data, labels, currency, is_ar, filters):
+	rows = _visible_rows(data)
+	body_rows = ""
+	for d in rows:
+		is_total = d["account"] == "'" + _("Total") + "'"
+		css_class = "et-total" if is_total else ("et-group" if d.get("is_group") else "")
+		indent_px = (d.get("indent", 0) or 0) * 18
+		name = d.get("account_name", d["account"])
+		body_rows += f"""
+			<tr class="{css_class}">
+				<td style="padding-{'right' if is_ar else 'left'}:{indent_px}px">{name}</td>
+				<td>{_fmt(d.get('opening_debit'), currency)}</td>
+				<td>{_fmt(d.get('opening_credit'), currency)}</td>
+				<td>{_fmt(d.get('debit'), currency)}</td>
+				<td>{_fmt(d.get('credit'), currency)}</td>
+				<td>{_fmt(d.get('closing_debit'), currency)}</td>
+				<td>{_fmt(d.get('closing_credit'), currency)}</td>
+			</tr>
+		"""
+		# nested transactions for leaf accounts with movement in the period
+		if not is_total and not d.get("is_group") and (flt(d.get("debit")) or flt(d.get("credit"))):
+			txns = get_account_transactions(
+				account=d["account"],
+				company=filters.get("company"),
+				from_date=filters.get("from_date"),
+				to_date=filters.get("to_date"),
+				party_type=filters.get("party_type"),
+				party=filters.get("party"),
+				cost_center=filters.get("cost_center"),
+				project=filters.get("project"),
+				voucher_type=filters.get("voucher_type"),
+				voucher_no=filters.get("voucher_no"),
+			)
+			for t in txns:
+				body_rows += f"""
+					<tr class="et-txn-row">
+						<td colspan="3">
+							{formatdate(t.posting_date)} &middot; {t.voucher_type} {t.voucher_no}
+							{f" &middot; {t.party}" if t.party else ""}
+						</td>
+						<td>{_fmt(t.debit, currency)}</td>
+						<td>{_fmt(t.credit, currency)}</td>
+						<td colspan="2"></td>
+					</tr>
+				"""
+	return f"""
+		<table class="et-table">
+			<thead><tr>
+				<th>{labels['account']}</th>
+				<th>{labels['opening_dr']}</th>
+				<th>{labels['opening_cr']}</th>
+				<th>{labels['debit']}</th>
+				<th>{labels['credit']}</th>
+				<th>{labels['closing_dr']}</th>
+				<th>{labels['closing_cr']}</th>
+			</tr></thead>
+			<tbody>{body_rows}</tbody>
+		</table>
+	"""
+
+
+def _render_summary(data, labels, currency, is_ar):
+	# group by root_type using the top-level (indent 0) rows only, since
+	# their closing totals already carry the full subtree via
+	# accumulate_values_into_parents — avoids double counting.
+	rows = _visible_rows(data)
+	roots = [d for d in rows if (d.get("indent") or 0) == 0 and d.get("root_type")]
+
+	totals_by_root = {}
+	for d in roots:
+		rt = d["root_type"]
+		totals_by_root.setdefault(rt, {"closing_debit": 0.0, "closing_credit": 0.0})
+		totals_by_root[rt]["closing_debit"] += flt(d.get("closing_debit"))
+		totals_by_root[rt]["closing_credit"] += flt(d.get("closing_credit"))
+
+	assets = totals_by_root.get("Asset", {}).get("closing_debit", 0) - totals_by_root.get("Asset", {}).get(
+		"closing_credit", 0
+	)
+	liabilities = totals_by_root.get("Liability", {}).get("closing_credit", 0) - totals_by_root.get(
+		"Liability", {}
+	).get("closing_debit", 0)
+	equity = totals_by_root.get("Equity", {}).get("closing_credit", 0) - totals_by_root.get("Equity", {}).get(
+		"closing_debit", 0
+	)
+	income = totals_by_root.get("Income", {}).get("closing_credit", 0) - totals_by_root.get("Income", {}).get(
+		"closing_debit", 0
+	)
+	expense = totals_by_root.get("Expense", {}).get("closing_debit", 0) - totals_by_root.get("Expense", {}).get(
+		"closing_credit", 0
+	)
+	net_income = income - expense
+
+	kpis = f"""
+		<div class="et-kpis">
+			<div class="et-kpi"><div class="label">{labels['assets']}</div><div class="value">{_fmt(assets, currency)}</div></div>
+			<div class="et-kpi"><div class="label">{labels['liabilities']}</div><div class="value">{_fmt(liabilities, currency)}</div></div>
+			<div class="et-kpi"><div class="label">{labels['equity']}</div><div class="value">{_fmt(equity, currency)}</div></div>
+			<div class="et-kpi"><div class="label">{labels['net_income']}</div><div class="value">{_fmt(net_income, currency)}</div></div>
+		</div>
+	"""
+
+	body_rows = ""
+	for rt, totals in totals_by_root.items():
+		label = labels.get(ROOT_TYPE_LABEL_KEY.get(rt, ""), rt)
+		body_rows += f"""
+			<tr class="et-group">
+				<td>{label}</td>
+				<td>{_fmt(totals['closing_debit'], currency)}</td>
+				<td>{_fmt(totals['closing_credit'], currency)}</td>
+			</tr>
+		"""
+
+	table = f"""
+		<table class="et-table">
+			<thead><tr>
+				<th>{labels['account']}</th>
+				<th>{labels['closing_dr']}</th>
+				<th>{labels['closing_cr']}</th>
+			</tr></thead>
+			<tbody>{body_rows}</tbody>
+		</table>
+	"""
+	return kpis + table
+
+
+@frappe.whitelist()
+def get_print_html(filters, print_design="standard", language="en"):
+	filters = frappe._dict(json.loads(filters) if isinstance(filters, str) else filters)
+	is_ar = language == "ar"
+	labels = LABELS["ar"] if is_ar else LABELS["en"]
+
+	# executive summary always shows the full unfiltered tree, since its
+	# subtotals rely on true root accounts (indent 0)
+	summary_filters = frappe._dict(filters)
+	if print_design == "summary":
+		summary_filters.level = None
+		summary_filters.only_ledger_accounts = 0
+		summary_filters.account_type = None
+
+	columns, data = execute(summary_filters if print_design == "summary" else filters)
+	data = data or []
+
+	company = frappe.get_cached_doc("Company", filters.company) if filters.get("company") else None
+	currency = filters.get("presentation_currency") or erpnext.get_company_currency(filters.company)
+
+	if print_design == "detailed":
+		body = _render_detailed(data, labels, currency, is_ar, filters)
+	elif print_design == "summary":
+		body = _render_summary(data, labels, currency, is_ar)
+	else:
+		body = _render_standard(data, labels, currency, is_ar)
+
+	html = f"""
+		<html dir="{'rtl' if is_ar else 'ltr'}">
+		<head>
+			<meta charset="utf-8">
+			<title>{labels['title']}</title>
+			<style>{_base_css(is_ar)}</style>
+		</head>
+		<body>
+			{_header_html(labels, filters, company, is_ar)}
+			{body}
+		</body>
+		</html>
+	"""
+	return html
+
+
+@frappe.whitelist()
+def download_pdf(filters, print_design="standard", language="en"):
+	html = get_print_html(filters, print_design, language)
+	frappe.local.response.filecontent = get_pdf(html)
+	frappe.local.response.type = "download"
+	frappe.local.response.filename = f"ET Trial Balance - {print_design}.pdf"
