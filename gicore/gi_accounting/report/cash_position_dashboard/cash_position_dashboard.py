@@ -209,7 +209,7 @@ def get_trend_data(filters):
 
 	from_date = filters.get("from_date") or add_days(filters.as_on_date, -90)
 	granularity = filters.get("granularity") or "Daily"
-	date_format = DATE_FORMATS.get(granularity, "%Y-%m-%d")
+	date_format = DATE_FORMATS.get(granularity, "%%Y-%%m-%%d")
 
 	opening = frappe.db.sql(
 		"""
@@ -228,7 +228,7 @@ def get_trend_data(filters):
 	movements = frappe.db.sql(
 		f"""
 		select
-			date_format(posting_date, '{date_format}') as period,
+			date_format(posting_date, '%%Y-%%m-%%d') as period,
 			min(posting_date) as period_start,
 			sum(case when (debit - credit) > 0 then (debit - credit) else 0 end) as inflow,
 			sum(case when (debit - credit) < 0 then (credit - debit) else 0 end) as outflow,
