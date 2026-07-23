@@ -49,7 +49,7 @@ frappe.query_reports["PO Payment Status V6"] = {
 			fieldname: "status",
 			label: __("Status"),
 			fieldtype: "MultiSelect",
-			options: "\nFully Paid\nPartially Paid\nNot Paid",
+			options: "\nFully Paid\nPartially Paid\nNot Paid\nClosed Manually",
 			default: ["Partially Paid", "Not Paid"],
 		},
 		{
@@ -116,6 +116,8 @@ frappe.query_reports["PO Payment Status V6"] = {
 				value = `<span style="color: #dc3545; font-weight: bold;">❌ ${data.status}</span>`;
 			} else if (data && data.status === "Partially Paid") {
 				value = `<span style="color: #fd7e14; font-weight: bold;">🔄 ${data.status}</span>`;
+			}  else if (data && data.status === "Closed Manually") {
+				value = `<span style="color: #6c757d; font-weight: bold;">🔒 ${data.status}</span>`;
 			} else if (data && data.status === "Summary") {
 				value = `<span style="color: #0056b3; font-weight: bold; font-size: 1.05em;">📊 ${__("Month Total")}</span>`;
 			} else if (data && data.status === "Grand Total") {

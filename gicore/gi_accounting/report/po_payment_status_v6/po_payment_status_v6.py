@@ -175,7 +175,8 @@ def get_data(filters):
 			po.company,
 			po.currency        AS po_currency,
 			po.grand_total     AS po_amount,
-			po.status
+			po.status,
+			po.custom_closed_manually AS closed_manually
 		FROM `tabPurchase Order` po
 		INNER JOIN `tabSupplier` s ON po.supplier = s.name
 		WHERE po.docstatus = 1
@@ -233,6 +234,10 @@ def get_data(filters):
 			display_status = "Partially Paid"
 		else:
 			display_status = "Not Paid"
+
+		# NEW: manual close override — only applies if not already Fully Paid
+		if row.get("closed_manually") and display_status != "Fully Paid":
+			display_status = "Closed Manually"
 
 		month = getdate(row["transaction_date"]).strftime("%b %Y") if row["transaction_date"] else ""
 		month_key = getdate(row["transaction_date"]).strftime("%Y%m") if row["transaction_date"] else ""
