@@ -1,0 +1,564 @@
+<!--
+  General Ledger — Custom Print Format for Frappe/ERPNext
+  ═══════════════════════════════════════════════════════
+  HOW TO INSTALL
+  1. Go to: Frappe Desk → Print Format → New
+  2. Document Type : GL Entry  (or use "Report" if building via Script Report)
+  3. Format Type   : Jinja
+  4. Paste this entire file into the HTML field
+  5. For Script Report printing, use the approach below with get_print_html()
+
+  JINJA VARIABLES EXPECTED
+  ─────────────────────────
+  {{ company }}            — Company name
+  {{ company_address }}    — One-line address string
+  {{ filters.from_date }}  — Period start
+  {{ filters.to_date }}    — Period end
+  {{ filters.account }}    — Account filter label (or "All Accounts")
+  {{ filters.cost_center }}— Cost centre filter label (optional)
+  {{ filters.project }}    — Project filter label (optional)
+  {{ report_currency }}    — e.g. "SAR"
+  {{ print_date }}         — frappe.utils.today()
+  {{ printed_by }}         — frappe.session.user
+
+  {{ entries }}            — list of dicts, each with:
+      account, account_name, voucher_type, voucher_no,
+      posting_date, party_type, party, against,
+      remarks, debit, credit, balance,
+      is_group_header (bool), is_closing_row (bool)
+
+  For a standalone HTML preview / Script Report approach, replace
+  Jinja blocks with your Python-rendered values.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:        #111111;
+  --ink-mid:    #444444;
+  --ink-light:  #777777;
+  --blue:       #1A4F8A;
+  --blue-light: #EBF1F9;
+  --rule:       #D8DDE3;
+  --rule-light: #EEF0F2;
+  --debit:      #B72B27;
+  --credit:     #1A6B3A;
+  --close-bg:   #F3F6FA;
+  --group-bar:  #1A4F8A;
+  --page-bg:    #FAFAFA;
+
+  --f-body:  8.4pt;
+  --f-small: 7.5pt;
+  --f-head:  7.8pt;
+  --f-title: 13pt;
+  --f-sub:   9pt;
+  --lh:      1.35;
+}
+
+html, body {
+  background: var(--page-bg);
+  color: var(--ink);
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  font-size: var(--f-body);
+  line-height: var(--lh);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── Page wrapper ─────────────────────────────────────────────────── */
+.gl-page {
+  width: 100%;
+  max-width: 297mm;          /* A4 landscape */
+  margin: 0 auto;
+  padding: 10mm 10mm 14mm;
+  background: #fff;
+}
+
+/* ── Document header ─────────────────────────────────────────────── */
+.gl-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 12px;
+  border-bottom: 2.5px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+}
+.gl-company-name {
+  font-size: var(--f-title);
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: -.2px;
+  line-height: 1.15;
+}
+.gl-company-address {
+  font-size: var(--f-small);
+  color: var(--ink-light);
+  margin-top: 2px;
+}
+.gl-report-label {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--blue);
+  text-align: right;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+/* ── Meta strip ──────────────────────────────────────────────────── */
+.gl-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  background: var(--blue-light);
+  border: 1px solid #C9D9EE;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.gl-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-right: 1px solid #C9D9EE;
+  white-space: nowrap;
+}
+.gl-meta-item:last-child { border-right: none; }
+.gl-meta-label {
+  font-size: var(--f-small);
+  font-weight: 600;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.gl-meta-val {
+  font-size: var(--f-small);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* ── Table ───────────────────────────────────────────────────────── */
+.gl-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Column widths — tuned for A4 landscape 277mm usable */
+.gl-table col.c-date      { width: 7.2%; }
+.gl-table col.c-voucher   { width: 8.5%; }
+.gl-table col.c-vtype     { width: 6.5%; }
+.gl-table col.c-party     { width: 9%;   }
+.gl-table col.c-against   { width: 11%;  }
+.gl-table col.c-remarks   { width: 19%;  }
+.gl-table col.c-debit     { width: 8%;   }
+.gl-table col.c-credit    { width: 8%;   }
+.gl-table col.c-balance   { width: 9%;   }
+.gl-table col.c-curr      { width: 4%;   }
+
+/* ── Column header ───────────────────────────────────────────────── */
+.gl-table thead tr {
+  background: var(--blue);
+  color: #fff;
+}
+.gl-table thead th {
+  font-size: var(--f-head);
+  font-weight: 600;
+  padding: 5px 5px;
+  text-align: left;
+  letter-spacing: .02em;
+  border: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gl-table thead th.num { text-align: right; }
+
+/* ── Data rows ───────────────────────────────────────────────────── */
+.gl-table tbody tr.data-row {
+  border-bottom: 1px solid var(--rule-light);
+}
+.gl-table tbody tr.data-row:nth-child(even) {
+  background: #F7F9FC;
+}
+.gl-table tbody tr.data-row:hover { background: #EDF3FB; }
+
+.gl-table td {
+  font-size: var(--f-body);
+  padding: 3.5px 5px;
+  vertical-align: top;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+.gl-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.1px;
+}
+.gl-table td.debit-cell  { color: var(--debit);  font-weight: 500; }
+.gl-table td.credit-cell { color: var(--credit); font-weight: 500; }
+.gl-table td.balance-neg { color: var(--debit);  font-weight: 600; }
+.gl-table td.balance-pos { color: var(--credit); font-weight: 600; }
+.gl-table td.muted { color: var(--ink-light); }
+.gl-table td.remarks-cell {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+/* ── Account group header row ────────────────────────────────────── */
+.gl-table tr.group-header td {
+  background: transparent;
+  padding: 8px 5px 3px;
+  border-bottom: none;
+}
+.group-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.group-bar {
+  width: 3px;
+  height: 14px;
+  background: var(--group-bar);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.group-account-code {
+  font-size: 7pt;
+  color: var(--ink-light);
+  font-weight: 500;
+}
+.group-account-name {
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: .01em;
+}
+.group-currency {
+  font-size: 7pt;
+  color: var(--ink-light);
+  margin-left: auto;
+  font-weight: 500;
+}
+
+/* Thin rule line below group header label */
+.gl-table tr.group-rule td {
+  padding: 0 5px 2px;
+  border-bottom: 1px solid var(--rule);
+}
+.group-rule-line {
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ── Opening balance row ─────────────────────────────────────────── */
+.gl-table tr.opening-row td {
+  font-size: var(--f-small);
+  font-weight: 600;
+  color: var(--ink-mid);
+  background: var(--rule-light);
+  padding: 3px 5px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ── Closing / totals row ────────────────────────────────────────── */
+.gl-table tr.closing-row td {
+  font-size: var(--f-body);
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--close-bg);
+  padding: 4px 5px;
+  border-top: 1.5px solid var(--blue);
+  border-bottom: 2px solid var(--blue);
+}
+.gl-table tr.closing-row td.num { font-variant-numeric: tabular-nums; }
+
+/* ── Grand total row ─────────────────────────────────────────────── */
+.gl-table tr.grand-total td {
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #fff;
+  background: var(--blue);
+  padding: 5px 5px;
+  border: none;
+}
+.gl-table tr.grand-total td.num { font-variant-numeric: tabular-nums; }
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.gl-footer {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid var(--rule);
+  padding-top: 5px;
+}
+.gl-footer-note {
+  font-size: 7pt;
+  color: var(--ink-light);
+  line-height: 1.5;
+}
+.gl-footer-sig {
+  text-align: right;
+  font-size: 7pt;
+  color: var(--ink-light);
+}
+.gl-sig-line {
+  width: 140px;
+  border-top: 1px solid var(--rule);
+  margin: 20px 0 3px auto;
+}
+
+/* ── Currency pill ───────────────────────────────────────────────── */
+.curr-pill {
+  display: inline-block;
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: var(--blue);
+  background: var(--blue-light);
+  border: 1px solid #C9D9EE;
+  border-radius: 3px;
+  padding: 0 4px;
+  vertical-align: middle;
+  letter-spacing: .03em;
+}
+
+/* ── Zero / dash ─────────────────────────────────────────────────── */
+.zero { color: var(--rule); }
+
+/* ── Page break rules ────────────────────────────────────────────── */
+@media print {
+  html, body { background: #fff; }
+  .gl-page   { padding: 8mm 8mm 12mm; max-width: 100%; }
+  .gl-table thead { display: table-header-group; }
+  .gl-table tfoot { display: table-footer-group; }
+  tr.group-header, tr.opening-row { page-break-after: avoid; }
+  tr.closing-row  { page-break-before: avoid; }
+  @page {
+    size: A4 landscape;
+    margin: 8mm 8mm 12mm;
+  }
+}
+</style>
+</head>
+<body>
+<div class="gl-page">
+
+  <!-- ── Page header ──────────────────────────────────────────────── -->
+  <div class="gl-header">
+    <div>
+      <div class="gl-company-name">{{ company }}</div>
+      <div class="gl-company-address">{{ company_address }}</div>
+    </div>
+    <div>
+      <div class="gl-report-label">General Ledger</div>
+      <div style="font-size:7pt;color:#666;text-align:right;margin-top:3px;">
+        Printed: {{ print_date }} &nbsp;|&nbsp; {{ printed_by }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Meta strip ───────────────────────────────────────────────── -->
+  <div class="gl-meta-strip">
+    <div class="gl-meta-item">
+      <span class="gl-meta-label">Period</span>
+      <span class="gl-meta-val">{{ filters.from_date }} — {{ filters.to_date }}</span>
+    </div>
+    {% if filters.account %}
+    <div class="gl-meta-item">
+      <span class="gl-meta-label">Account</span>
+      <span class="gl-meta-val">{{ filters.account }}</span>
+    </div>
+    {% endif %}
+    {% if filters.cost_center %}
+    <div class="gl-meta-item">
+      <span class="gl-meta-label">Cost Centre</span>
+      <span class="gl-meta-val">{{ filters.cost_center }}</span>
+    </div>
+    {% endif %}
+    {% if filters.project %}
+    <div class="gl-meta-item">
+      <span class="gl-meta-label">Project</span>
+      <span class="gl-meta-val">{{ filters.project }}</span>
+    </div>
+    {% endif %}
+    <div class="gl-meta-item">
+      <span class="gl-meta-label">Currency</span>
+      <span class="gl-meta-val">{{ report_currency }}</span>
+    </div>
+  </div>
+
+  <!-- ── Ledger table ─────────────────────────────────────────────── -->
+  <table class="gl-table">
+    <colgroup>
+      <col class="c-date">
+      <col class="c-voucher">
+      <col class="c-vtype">
+      <col class="c-party">
+      <col class="c-against">
+      <col class="c-remarks">
+      <col class="c-debit">
+      <col class="c-credit">
+      <col class="c-balance">
+      <col class="c-curr">
+    </colgroup>
+
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Voucher No.</th>
+        <th>Type</th>
+        <th>Party</th>
+        <th>Against</th>
+        <th>Remarks</th>
+        <th class="num">Debit</th>
+        <th class="num">Credit</th>
+        <th class="num">Balance</th>
+        <th>Curr.</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {# ── Jinja loop over entries ── #}
+      {% set ns = namespace(grand_debit=0, grand_credit=0) %}
+
+      {% for entry in entries %}
+
+        {# ── Account group header ── #}
+        {% if entry.is_group_header %}
+        <tr class="group-header">
+          <td colspan="10">
+            <div class="group-header-inner">
+              <div class="group-bar"></div>
+              <span class="group-account-code">{{ entry.account }}</span>
+              <span class="group-account-name">{{ entry.account_name }}</span>
+              <span class="group-currency">
+                <span class="curr-pill">{{ report_currency }}</span>
+              </span>
+            </div>
+          </td>
+        </tr>
+        <tr class="group-rule"><td colspan="10"><div class="group-rule-line"></div></td></tr>
+
+        {# ── Opening balance row ── #}
+        {% elif entry.is_opening %}
+        <tr class="opening-row">
+          <td colspan="6" style="font-style:italic;">Opening Balance</td>
+          <td class="num {% if entry.debit %}debit-cell{% endif %}">
+            {% if entry.debit %}{{ '{:,.2f}'.format(entry.debit) }}{% else %}<span class="zero">—</span>{% endif %}
+          </td>
+          <td class="num {% if entry.credit %}credit-cell{% endif %}">
+            {% if entry.credit %}{{ '{:,.2f}'.format(entry.credit) }}{% else %}<span class="zero">—</span>{% endif %}
+          </td>
+          <td class="num {% if entry.balance < 0 %}balance-neg{% elif entry.balance > 0 %}balance-pos{% endif %}">
+            {{ '{:,.2f}'.format(entry.balance | abs) }}
+            {% if entry.balance < 0 %} Cr{% elif entry.balance > 0 %} Dr{% endif %}
+          </td>
+          <td></td>
+        </tr>
+
+        {# ── Closing / totals row ── #}
+        {% elif entry.is_closing_row %}
+        {% set ns.grand_debit  = ns.grand_debit  + (entry.debit  or 0) %}
+        {% set ns.grand_credit = ns.grand_credit + (entry.credit or 0) %}
+        <tr class="closing-row">
+          <td colspan="6">Closing Balance — {{ entry.account_name }}</td>
+          <td class="num debit-cell">
+            {% if entry.debit %}{{ '{:,.2f}'.format(entry.debit) }}{% else %}<span class="zero">—</span>{% endif %}
+          </td>
+          <td class="num credit-cell">
+            {% if entry.credit %}{{ '{:,.2f}'.format(entry.credit) }}{% else %}<span class="zero">—</span>{% endif %}
+          </td>
+          <td class="num {% if entry.balance < 0 %}balance-neg{% elif entry.balance > 0 %}balance-pos{% endif %}">
+            {{ '{:,.2f}'.format(entry.balance | abs) }}
+            {% if entry.balance < 0 %} Cr{% elif entry.balance > 0 %} Dr{% endif %}
+          </td>
+          <td></td>
+        </tr>
+
+        {# ── Normal data row ── #}
+        {% else %}
+        <tr class="data-row">
+          <td class="muted">{{ entry.posting_date }}</td>
+          <td style="font-weight:500;color:#1A4F8A;">{{ entry.voucher_no }}</td>
+          <td class="muted">{{ entry.voucher_type | truncate(10, true, '') }}</td>
+          <td>{{ entry.party or '—' }}</td>
+          <td class="muted">{{ entry.against | truncate(20, true, '…') }}</td>
+          <td class="remarks-cell muted">{{ entry.remarks | truncate(60, true, '…') }}</td>
+          <td class="num {% if entry.debit  > 0 %}debit-cell{% else %}zero{% endif %}">
+            {% if entry.debit  > 0 %}{{ '{:,.2f}'.format(entry.debit)  }}{% else %}—{% endif %}
+          </td>
+          <td class="num {% if entry.credit > 0 %}credit-cell{% else %}zero{% endif %}">
+            {% if entry.credit > 0 %}{{ '{:,.2f}'.format(entry.credit) }}{% else %}—{% endif %}
+          </td>
+          <td class="num {% if entry.balance < 0 %}balance-neg{% elif entry.balance > 0 %}balance-pos{% endif %}">
+            {{ '{:,.2f}'.format(entry.balance | abs) }}
+            <span style="font-size:6.5pt;font-weight:400;">
+              {% if entry.balance < 0 %}Cr{% elif entry.balance > 0 %}Dr{% endif %}
+            </span>
+          </td>
+          <td style="font-size:7pt;color:#aaa;">{{ entry.account_currency or report_currency }}</td>
+        </tr>
+        {% endif %}
+
+      {% endfor %}
+    </tbody>
+
+    <!-- ── Grand total footer ─────────────────────────────────────── -->
+    <tfoot>
+      <tr class="grand-total">
+        <td colspan="6" style="font-weight:700;letter-spacing:.02em;">
+          GRAND TOTAL &nbsp;
+          <span style="font-size:7pt;font-weight:400;opacity:.75;">
+            {{ filters.from_date }} — {{ filters.to_date }}
+          </span>
+        </td>
+        <td class="num" style="letter-spacing:-.1px;">
+          {{ '{:,.2f}'.format(ns.grand_debit) }}
+        </td>
+        <td class="num" style="letter-spacing:-.1px;">
+          {{ '{:,.2f}'.format(ns.grand_credit) }}
+        </td>
+        <td class="num" style="letter-spacing:-.1px;">
+          {% set net = ns.grand_debit - ns.grand_credit %}
+          {{ '{:,.2f}'.format(net | abs) }}
+          <span style="font-size:6.5pt;font-weight:400;">
+            {% if net > 0 %}Dr{% elif net < 0 %}Cr{% endif %}
+          </span>
+        </td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- ── Document footer ──────────────────────────────────────────── -->
+  <div class="gl-footer">
+    <div class="gl-footer-note">
+      <strong>{{ company }}</strong><br>
+      Generated on {{ print_date }} — All amounts in {{ report_currency }}<br>
+      Debit balances shown in <span style="color:#B72B27;font-weight:600;">red</span> ·
+      Credit balances shown in <span style="color:#1A6B3A;font-weight:600;">green</span>
+    </div>
+    <div class="gl-footer-sig">
+      <div class="gl-sig-line"></div>
+      Authorised Signatory
+    </div>
+  </div>
+
+</div><!-- /.gl-page -->
+</body>
+</html>
