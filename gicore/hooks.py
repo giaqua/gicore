@@ -252,6 +252,8 @@ app_include_js = [
     # "custom_notifications.js",
     "/assets/gicore/js/report_issue_v2.js",
     "/assets/gicore/js/vision_mission_banner.js",
+    "/assets/gicore/js/lib/xlsx.full.min.js",
+    "/assets/gicore/js/attachment_preview.js",
     # "/assets/gicore/js/login_vm.js"
     # "/assets/gicore/js/lib/html2canvas.min.js",
     # "/assets/gicore/js/report_issue_widget.js"
