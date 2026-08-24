@@ -850,19 +850,20 @@
             });
         });
 
-        // Level 3: leaf click -> navigate
+        // Level 3: leaf click -> open in a new tab
         container.querySelectorAll('.qa-leaf').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const type = el.getAttribute('data-type');
                 const target = el.getAttribute('data-target');
-                blurAndHide(d);
+                if (!target) return;
 
-                if (type === 'Page') {
-                    frappe.set_route('List', target);
-                } else if (type === 'Report') {
-                    frappe.set_route('query-report', target);
-                }
+                const url = type === 'Report'
+                    ? `/app/query-report/${encodeURIComponent(target)}`
+                    : `/app/${frappe.router.slug(target)}`;
+
+                window.open(url, '_blank');
+                // dialog stays open since we're not navigating away in this tab
             });
         });
     }
