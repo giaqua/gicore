@@ -36,7 +36,7 @@ if (!document.getElementById('quick-access-fab')) {
     quickBtn.type = 'button';
     quickBtn.title = 'Quick Access';
     quickBtn.className = 'my-help-btn my-quick-access-btn';
-    quickBtn.innerHTML = 'Quick Access';
+    quickBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>`;
 
     document.body.appendChild(quickBtn);
 
@@ -73,6 +73,17 @@ if (!document.getElementById('my-issues-widget-style')) {
         .my-quick-access-btn {
             bottom: 124px;
             background: #6c2bd9;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .my-quick-access-btn svg {
+            width: 18px;
+            height: 18px;
         }
         .issue-list {
             display: flex;
