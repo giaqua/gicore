@@ -306,12 +306,20 @@
                 padding: 2px 8px;
                 border-radius: 10px;
             }
+
+            /* NOTE: accordion open/close is driven purely by the .qa-open class
+               toggling max-height between 0 and a generous fixed cap. We
+               deliberately do NOT measure scrollHeight in JS anymore — see
+               bind_qa_tree_events() for why that was buggy. */
             .qa-module-body {
                 max-height: 0;
                 overflow: hidden;
-                transition: max-height 0.25s ease;
+                transition: max-height 0.3s ease;
                 background: var(--gc-bg-soft);
                 padding: 0 10px;
+            }
+            .qa-module.qa-open > .qa-module-body {
+                max-height: 2000px;
             }
 
             /* Level 2: Pages / Reports category */
@@ -357,7 +365,10 @@
             .qa-category-body {
                 max-height: 0;
                 overflow: hidden;
-                transition: max-height 0.2s ease;
+                transition: max-height 0.3s ease;
+            }
+            .qa-category.qa-open > .qa-category-body {
+                max-height: 1000px;
             }
 
             /* Chevrons (shared) */
@@ -732,8 +743,8 @@
                 bind_qa_tree_events(container, d);
 
                 // Auto-expand the first module for orientation
-                const firstModuleHead = container.querySelector('.qa-module-head');
-                if (firstModuleHead) firstModuleHead.click();
+                const firstModule = container.querySelector('.qa-module');
+                if (firstModule) firstModule.classList.add('qa-open');
             },
             error() {
                 const container = d.$wrapper.find('.quick-modules-container').get(0);
@@ -793,28 +804,39 @@
     }
 
     // ---- Event binding for the whole tree ----
+    // NOTE: this used to compute pixel heights via scrollHeight on both
+    // level 1 (module) and level 2 (category) nodes. That was buggy:
+    // when a category was opened, its parent module's max-height was
+    // re-measured one animation frame later via requestAnimationFrame,
+    // but at that point the category's own max-height transition had
+    // only just started — so scrollHeight was captured while the
+    // category was still visually collapsed. The module's max-height
+    // then got locked too small to contain the newly-expanding
+    // category, which looked exactly like "the second level won't
+    // uncollapse" even though the category's own class/state was
+    // correct.
+    //
+    // Fix: don't measure anything. Just toggle the `qa-open` class on
+    // both levels and let CSS transition max-height to a generous
+    // fixed cap (2000px / 1000px, see stylesheet above). The outer
+    // .qa-tree already scrolls at 60vh so there's no risk of runaway
+    // page height.
     function bind_qa_tree_events(container, d) {
         // Level 1: toggle module
         container.querySelectorAll('.qa-module-head').forEach(head => {
             head.addEventListener('click', () => {
                 const node = head.closest('.qa-module');
-                const body = node.querySelector('.qa-module-body');
                 const isOpen = node.classList.contains('qa-open');
 
                 if (isOpen) {
                     node.classList.remove('qa-open');
-                    body.style.maxHeight = '0px';
-                    // also collapse any open categories inside
+                    // also collapse any open categories inside so re-opening
+                    // the module later starts from a clean state
                     node.querySelectorAll('.qa-category.qa-open').forEach(cat => {
                         cat.classList.remove('qa-open');
-                        cat.querySelector('.qa-category-body').style.maxHeight = '0px';
                     });
                 } else {
                     node.classList.add('qa-open');
-                    // expand after categories are measured
-                    requestAnimationFrame(() => {
-                        body.style.maxHeight = body.scrollHeight + 'px';
-                    });
                 }
             });
         });
@@ -824,24 +846,7 @@
             head.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const cat = head.closest('.qa-category');
-                const body = cat.querySelector('.qa-category-body');
-                const isOpen = cat.classList.contains('qa-open');
-                const moduleBody = cat.closest('.qa-module-body');
-
-                if (isOpen) {
-                    cat.classList.remove('qa-open');
-                    body.style.maxHeight = '0px';
-                } else {
-                    cat.classList.add('qa-open');
-                    body.style.maxHeight = body.scrollHeight + 'px';
-                }
-
-                // re-measure parent module height so it accommodates the change
-                requestAnimationFrame(() => {
-                    if (moduleBody && moduleBody.closest('.qa-module').classList.contains('qa-open')) {
-                        moduleBody.style.maxHeight = moduleBody.scrollHeight + 'px';
-                    }
-                });
+                cat.classList.toggle('qa-open');
             });
         });
 
