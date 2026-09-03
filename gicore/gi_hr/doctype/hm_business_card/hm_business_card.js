@@ -36,10 +36,7 @@ frappe.ui.form.on("HM Business Card", {
                         title: __("Review Business Card"),
                         size: "small",
                         fields: [
-                            {
-                                fieldtype: "HTML",
-                                fieldname: "preview"
-                            }
+                            { fieldtype: "HTML", fieldname: "preview" }
                         ],
                         primary_action_label: __("Print"),
                         primary_action() {
@@ -50,10 +47,12 @@ frappe.ui.form.on("HM Business Card", {
                     });
 
                     dialog.fields_dict.preview.$wrapper.html(`
-                        <iframe id="card-preview-frame"
-                            style="width:100%; height:340px; border:1px solid #d1d8dd; border-radius:6px;"
-                            srcdoc="${r.message.replace(/"/g, "&quot;")}">
-                        </iframe>
+                        <div style="display:flex; justify-content:center; padding:16px; background:#eef1f2;">
+                            <iframe id="card-preview-frame"
+                                style="width:85mm; height:55mm; border:1px solid #d1d8dd; border-radius:4px; box-shadow:0 4px 16px rgba(0,0,0,0.15);"
+                                srcdoc="${r.message.replace(/"/g, "&quot;")}">
+                            </iframe>
+                        </div>
                     `);
 
                     dialog.show();

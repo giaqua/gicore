@@ -49,31 +49,32 @@ def _build_card_html(doc) -> str:
     <head>
     <style>
         @media print {{
-            @page {{ size: A6 landscape; margin: 0; }}
+            @page {{ size: 85mm 55mm; margin: 0; }}
         }}
-        body {{
+        * {{ box-sizing: border-box; }}
+        html, body {{
             margin: 0;
+            padding: 0;
             font-family: 'Helvetica', 'Arial', sans-serif;
-            background: #0B2E2E;
         }}
         .card {{
-            width: 100%;
-            min-height: 100vh;
+            width: 85mm;
+            height: 55mm;
             background: linear-gradient(165deg, #103F3F 0%, #0B2E2E 100%);
             color: #F4F1E8;
-            padding: 28px 26px;
-            box-sizing: border-box;
+            padding: 14px 16px;
+            overflow: hidden;
         }}
-        .mark {{ font-size: 11px; letter-spacing: 0.02em; color: #4FC3B0; margin-bottom: 18px; }}
-        h1 {{ font-size: 26px; margin: 0 0 2px; color: #F4F1E8; }}
-        .role {{ font-size: 12px; color: rgba(244,241,232,0.55); margin: 0 0 14px; }}
-        .divider {{ height: 1px; background: rgba(217,210,188,0.18); margin: 0 0 14px; }}
-        .field {{ font-size: 12px; margin-bottom: 6px; }}
-        .field span {{ color: #4FC3B0; display: inline-block; width: 50px; }}
-        .actions {{ margin-top: 18px; display: flex; gap: 18px; }}
+        .mark {{ font-size: 8px; letter-spacing: 0.02em; color: #4FC3B0; margin: 0 0 6px; }}
+        h1 {{ font-size: 16px; margin: 0 0 1px; color: #F4F1E8; line-height: 1.1; }}
+        .role {{ font-size: 8px; color: rgba(244,241,232,0.55); margin: 0 0 6px; }}
+        .divider {{ height: 1px; background: rgba(217,210,188,0.18); margin: 0 0 8px; }}
+        .field {{ font-size: 8px; margin-bottom: 3px; }}
+        .field span {{ color: #4FC3B0; display: inline-block; width: 34px; }}
+        .actions {{ margin-top: 8px; display: flex; gap: 10px; }}
         .actions div {{ text-align: center; }}
-        .actions img {{ background: #F4F1E8; padding: 4px; border-radius: 6px; width: 78px; height: 78px; }}
-        .actions p {{ font-size: 9px; color: rgba(244,241,232,0.6); margin: 4px 0 0; }}
+        .actions img {{ background: #F4F1E8; padding: 3px; border-radius: 4px; width: 46px; height: 46px; }}
+        .actions p {{ font-size: 6px; color: rgba(244,241,232,0.6); margin: 2px 0 0; }}
     </style>
     </head>
     <body>
