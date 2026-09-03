@@ -12,15 +12,25 @@ def _get_photo_url(doc):
 
 
 def _get_barcode_svg(value):
-	"""Generate an inline SVG barcode. Requires python-barcode (pip install python-barcode)."""
+	"""Generate an inline SVG barcode, with explicit width/height baked in
+	(prevents wkhtmltopdf from letting an oversized SVG spill onto the next page)."""
 	try:
 		import barcode
 		from barcode.writer import SVGWriter
 
 		buffer = BytesIO()
 		code128 = barcode.get("code128", value, writer=SVGWriter())
-		code128.write(buffer, options={"write_text": False, "module_height": 8, "quiet_zone": 1})
-		return buffer.getvalue().decode("utf-8")
+		code128.write(buffer, options={
+			"write_text": False,
+			"module_height": 8,
+			"module_width": 0.25,
+			"quiet_zone": 1,
+		})
+		svg = buffer.getvalue().decode("utf-8")
+
+		# force explicit width/height on the <svg> tag itself so it can't overflow
+		svg = svg.replace("<svg ", '<svg width="44mm" height="8mm" preserveAspectRatio="none" ', 1)
+		return svg
 	except Exception:
 		return ""
 
@@ -111,8 +121,11 @@ def _build_id_card_html(doc):
 	  .idc-info {{ position: absolute; top: 63mm; left: 5mm; width: 44mm; font-size: 6.8px; line-height: 2.1; color: #2b2b2b; }}
 	  .idc-info b {{ display:inline-block; width: 13mm; color: #0d3f8c; }}
 
-	  .idc-barcode {{ position: absolute; bottom: 3mm; left: 5mm; width: 44mm; text-align:center; }}
-	  .idc-barcode svg {{ width: 100%; height: 6mm; }}
+	  .idc-barcode {{
+        position: absolute; bottom: 3mm; left: 5mm; width: 44mm; height: 8mm;
+        text-align:center; overflow: hidden;
+        }}
+        .idc-barcode svg {{ width: 44mm !important; height: 8mm !important; display: block; margin: 0 auto; }}
 
 	  /* back side */
 	  .idc-back-header {{
@@ -153,7 +166,7 @@ def _build_id_card_html(doc):
 	    <b>Phone</b>{phone}
 	  </div>
 
-	  <div class="idc-barcode">{barcode_svg}</div>
+	  
 	</div>
 
 	<!-- BACK -->
@@ -166,7 +179,9 @@ def _build_id_card_html(doc):
 	    <b>Address:</b><br>{address}
 	  </div>
 	  <div class="idc-back-footer">If found, please return to HR Department — {company}</div>
+	  <div class="idc-barcode">{barcode_svg}</div>
 	</div>
+	
 	</div>
 	""".format(
 		company=frappe.utils.escape_html(doc.company or ""),
