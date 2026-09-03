@@ -26,6 +26,19 @@ def _generate_qr_base64(data: str) -> str:
     return base64.b64encode(buf.getvalue()).decode()
 
 
+def _get_status_watermark(doc) -> str:
+    if doc.docstatus == 0:
+        text, color = "DRAFT", "rgba(217, 119, 87, 0.35)"
+    elif doc.docstatus == 2:
+        text, color = "CANCELLED", "rgba(200, 60, 60, 0.35)"
+    else:
+        return ""  # submitted — no watermark
+
+    return f"""
+        <div class="watermark" style="color:{color};">{text}</div>
+    """
+
+
 def _build_card_html(doc) -> str:
     clean_phone = (doc.phone or "").replace("+", "").replace(" ", "").replace("-", "")
 
@@ -43,6 +56,7 @@ def _build_card_html(doc) -> str:
     whatsapp_qr = _generate_qr_base64(whatsapp_url)
 
     designation_html = f'<p class="role">{doc.designation}</p>' if doc.designation else ""
+    watermark_html = _get_status_watermark(doc)
 
     return f"""
     <html>
@@ -58,6 +72,7 @@ def _build_card_html(doc) -> str:
             font-family: 'Helvetica', 'Arial', sans-serif;
         }}
         .card {{
+            position: relative;
             width: 85mm;
             height: 55mm;
             background: linear-gradient(165deg, #103F3F 0%, #0B2E2E 100%);
@@ -75,10 +90,24 @@ def _build_card_html(doc) -> str:
         .actions div {{ text-align: center; }}
         .actions img {{ background: #F4F1E8; padding: 3px; border-radius: 4px; width: 46px; height: 46px; }}
         .actions p {{ font-size: 6px; color: rgba(244,241,232,0.6); margin: 2px 0 0; }}
+        .watermark {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-28deg);
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            border: 3px solid currentColor;
+            padding: 4px 14px;
+            pointer-events: none;
+            white-space: nowrap;
+        }}
     </style>
     </head>
     <body>
         <div class="card">
+            {watermark_html}
             <div class="mark">{doc.company or ''}</div>
             <h1>{doc.full_name}</h1>
             {designation_html}
