@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:HMBC-{#}",
  "creation": "2026-09-03 16:11:08.156514",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -77,10 +78,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-03 16:14:54.896835",
+ "modified": "2026-09-03 16:41:02.238859",
  "modified_by": "Administrator",
  "module": "GI HR",
  "name": "HM Business Card",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
