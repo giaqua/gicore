@@ -26,8 +26,9 @@ def _get_barcode_svg(value):
 
 
 def _build_id_card_html(doc):
-	"""Builds front/back ID card HTML. All classes prefixed with 'idc-' to avoid
-	colliding with Frappe/Bootstrap's own .card, .name, .info, .back, .corner etc."""
+	"""Vertical (portrait) ID card — 54mm x 85.6mm, front + back.
+	All classes prefixed 'idc-' to avoid colliding with Frappe/Bootstrap CSS.
+	Uses only wkhtmltopdf-safe CSS (no clip-path, no object-fit, no radial-gradient)."""
 
 	image = _get_photo_url(doc)
 	barcode_svg = _get_barcode_svg(doc.name)
@@ -38,85 +39,118 @@ def _build_id_card_html(doc):
 	  .idc-wrapper {{ all: initial; }}
 	  .idc-wrapper * {{ box-sizing: border-box; font-family: Arial, sans-serif; }}
 
-	  @page {{ size: 85.6mm 54mm; margin: 0; }}
+	  @page {{ size: 54mm 85.6mm; margin: 0; }}
 
 	  .idc-card {{
-	    width: 85.6mm; height: 54mm;
+	    width: 54mm; height: 85.6mm;
 	    position: relative;
 	    page-break-after: always;
 	    overflow: hidden;
 	    background: #ffffff;
-	    margin: 0 0 4mm 0;
+	    margin: 0 auto 6mm auto;
 	    display: block;
-	    border: 1px solid #ddd; /* remove this line if you don't want a visible edge on screen */
+	    border: 1px solid #ddd;
 	  }}
 	  .idc-card:last-child {{ page-break-after: auto; margin-bottom: 0; }}
 
-	  .idc-stripe {{
-	    position: absolute; top: 0; left: 0; bottom: 0; width: 12mm;
+	  /* top diagonal ribbon, built with borders instead of clip-path */
+	  .idc-ribbon-base {{
+	    position: absolute; top: 0; left: 0; width: 54mm; height: 16mm;
 	    background: #0d3f8c;
 	  }}
-	  .idc-stripe-cut {{
-	    position: absolute; top: 0; left: 12mm; width: 0; height: 0;
-	    border-top: 54mm solid #0d3f8c;
-	    border-right: 6mm solid transparent;
+	  .idc-ribbon-cut {{
+	    position: absolute; top: 16mm; left: 0; width: 0; height: 0;
+	    border-left: 54mm solid #0d3f8c;
+	    border-bottom: 6mm solid transparent;
 	  }}
-	  .idc-corner {{
-	    position: absolute; bottom: 0; right: 0; width: 0; height: 0;
-	    border-bottom: 16mm solid #1a5cb8;
-	    border-left: 22mm solid transparent;
-	  }}
+
+	  /* soft circle accent, bottom-left on front */
 	  .idc-blob {{
-	    position: absolute; top: -8mm; right: -8mm; width: 22mm; height: 22mm;
+	    position: absolute; bottom: -10mm; left: -10mm; width: 24mm; height: 24mm;
 	    background: #eaf1fb;
 	    border-radius: 50%;
 	  }}
-	  .idc-logo {{ position: absolute; top: 3mm; left: 16mm; font-size: 9px; font-weight: bold; color: #0d3f8c; }}
-	  .idc-logo span {{ display:block; font-weight: normal; font-size: 8px; color: #0d3f8c; }}
+
+	  /* small corner triangle bottom-right */
+	  .idc-corner {{
+	    position: absolute; bottom: 0; right: 0; width: 0; height: 0;
+	    border-bottom: 14mm solid #1a5cb8;
+	    border-left: 14mm solid transparent;
+	  }}
+
+	  .idc-logo {{
+	    position: absolute; top: 4mm; left: 0; width: 54mm; text-align: center;
+	    font-size: 10px; font-weight: bold; color: #ffffff; letter-spacing: 0.3px;
+	  }}
+	  .idc-logo span {{ display:block; font-weight: normal; font-size: 7.5px; color: #dce8fb; margin-top: 0.5mm; }}
 
 	  .idc-photo {{
-	    position: absolute; top: 9mm; left: 30mm; width: 22mm; height: 22mm;
-	    border-radius: 50%; border: 1px solid #eeeeee;
+	    position: absolute; top: 20mm; left: 15mm; width: 24mm; height: 24mm;
+	    border-radius: 50%; border: 2px solid #ffffff;
 	    background-image: url('{image}');
 	    background-size: cover;
 	    background-position: center;
+	    box-shadow: 0 0 0 1px #d8d8d8;
 	  }}
 
-	  .idc-emp-name {{ position: absolute; top: 33mm; left: 14mm; width: 58mm; text-align:center; font-size: 13px; font-weight: bold; color: #17253d; }}
+	  .idc-emp-name {{
+	    position: absolute; top: 47mm; left: 2mm; width: 50mm; text-align:center;
+	    font-size: 12.5px; font-weight: bold; color: #17253d;
+	  }}
 	  .idc-designation {{
-	    position: absolute; top: 38mm; left: 26mm; font-size: 7.5px; font-weight: bold;
-	    background: #1a5cb8; color: #ffffff; padding: 1.2mm 4mm; border-radius: 1mm; text-align:center;
+	    position: absolute; top: 53mm; left: 12mm; width: 30mm; text-align:center;
+	    font-size: 7px; font-weight: bold;
+	    background: #1a5cb8; color: #ffffff; padding: 1.3mm 0; border-radius: 1mm;
 	  }}
-	  .idc-info {{ position: absolute; top: 43mm; left: 14mm; font-size: 6.8px; line-height: 1.7; color: #1c1c1c; }}
-	  .idc-info b {{ display:inline-block; width: 12mm; }}
 
-	  .idc-barcode {{ position: absolute; bottom: 1mm; left: 14mm; width: 58mm; text-align:center; }}
+	  .idc-divider {{
+	    position: absolute; top: 60mm; left: 5mm; width: 44mm; height: 0;
+	    border-top: 0.4mm solid #e2e2e2;
+	  }}
+
+	  .idc-info {{ position: absolute; top: 63mm; left: 5mm; width: 44mm; font-size: 6.8px; line-height: 2.1; color: #2b2b2b; }}
+	  .idc-info b {{ display:inline-block; width: 13mm; color: #0d3f8c; }}
+
+	  .idc-barcode {{ position: absolute; bottom: 3mm; left: 5mm; width: 44mm; text-align:center; }}
 	  .idc-barcode svg {{ width: 100%; height: 6mm; }}
 
-	  .idc-back-title {{ position: absolute; top: 5mm; left: 5mm; font-size: 9px; font-weight: bold; color: #0d3f8c; }}
-	  .idc-back-content {{ position: absolute; top: 12mm; left: 5mm; right: 5mm; font-size: 7px; line-height: 1.8; color: #333333; }}
-	  .idc-back-footer {{ position: absolute; bottom: 3mm; left: 5mm; right: 5mm; font-size: 6px; text-align:center; color: #888888; }}
+	  /* back side */
+	  .idc-back-header {{
+	    position: absolute; top: 0; left: 0; width: 54mm; height: 10mm;
+	    background: #0d3f8c; text-align:center;
+	  }}
+	  .idc-back-header span {{ color: #ffffff; font-size: 9px; font-weight: bold; line-height: 10mm; }}
+
+	  .idc-back-content {{ position: absolute; top: 15mm; left: 5mm; right: 5mm; font-size: 7px; line-height: 2; color: #333333; }}
+	  .idc-back-content b {{ color: #0d3f8c; }}
+
+	  .idc-back-footer {{
+	    position: absolute; bottom: 4mm; left: 4mm; right: 4mm; font-size: 6px;
+	    text-align:center; color: #999999; border-top: 0.3mm solid #eee; padding-top: 2mm;
+	  }}
 	</style>
 
 	<!-- FRONT -->
 	<div class="idc-card idc-front">
 	  <div class="idc-blob"></div>
-	  <div class="idc-stripe"></div>
-	  <div class="idc-stripe-cut"></div>
+	  <div class="idc-ribbon-base"></div>
+	  <div class="idc-ribbon-cut"></div>
 	  <div class="idc-corner"></div>
 
-	  <div class="idc-logo">{company}<span>Employee ID</span></div>
+	  <div class="idc-logo">{company}<span>EMPLOYEE ID CARD</span></div>
 
 	  <div class="idc-photo"></div>
 
 	  <div class="idc-emp-name">{employee_name}</div>
 	  <div class="idc-designation">{designation}</div>
 
+	  <div class="idc-divider"></div>
+
 	  <div class="idc-info">
-	    <b>ID No</b>: {employee_id}<br>
-	    <b>Email</b>: {email}<br>
-	    <b>Dept</b>: {department}<br>
-	    <b>Phone</b>: {phone}
+	    <b>ID No</b>{employee_id}<br>
+	    <b>Email</b>{email}<br>
+	    <b>Dept</b>{department}<br>
+	    <b>Phone</b>{phone}
 	  </div>
 
 	  <div class="idc-barcode">{barcode_svg}</div>
@@ -124,14 +158,12 @@ def _build_id_card_html(doc):
 
 	<!-- BACK -->
 	<div class="idc-card idc-back">
-	  <div class="idc-stripe"></div>
-	  <div class="idc-blob"></div>
-	  <div class="idc-back-title">{company}</div>
+	  <div class="idc-back-header"><span>{company}</span></div>
 	  <div class="idc-back-content">
-	    <b>Emergency Contact:</b> {emergency_phone}<br>
-	    <b>Blood Group:</b> {blood_group}<br>
-	    <b>Date of Joining:</b> {date_of_joining}<br>
-	    <b>Address:</b> {address}
+	    <b>Emergency Contact:</b><br>{emergency_phone}<br><br>
+	    <b>Blood Group:</b> {blood_group}<br><br>
+	    <b>Date of Joining:</b><br>{date_of_joining}<br><br>
+	    <b>Address:</b><br>{address}
 	  </div>
 	  <div class="idc-back-footer">If found, please return to HR Department — {company}</div>
 	</div>
@@ -153,6 +185,7 @@ def _build_id_card_html(doc):
 	)
 
 	return html
+
 
 @frappe.whitelist()
 def get_id_card_html(employee):
