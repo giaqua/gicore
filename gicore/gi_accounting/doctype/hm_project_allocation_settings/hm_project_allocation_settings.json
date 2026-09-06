@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-06 10:58:36.144199",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "source_project",
+  "company",
+  "is_active",
+  "col_break_1",
+  "source_expense_account",
+  "start_date",
+  "end_date",
+  "sec_break_targets",
+  "allocation_targets",
+  "total_allocation_percent"
+ ],
+ "fields": [
+  {
+   "description": "The project bearing the indirect/management cost to be redistributed.",
+   "fieldname": "source_project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Account credited on the source project when posting an allocation JE.",
+   "fieldname": "source_expense_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Expense Account (credit)",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sec_break_targets",
+   "fieldtype": "Section Break",
+   "label": "Target Projects"
+  },
+  {
+   "fieldname": "allocation_targets",
+   "fieldtype": "Table",
+   "label": "Allocation Targets",
+   "options": "HM Project Allocation Target",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_allocation_percent",
+   "fieldtype": "Percent",
+   "label": "Total %",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-06 11:55:36.411536",
+ "modified_by": "Administrator",
+ "module": "GI Accounting",
+ "name": "HM Project Allocation Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
