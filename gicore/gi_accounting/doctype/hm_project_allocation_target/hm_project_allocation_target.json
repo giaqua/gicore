@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-06 10:56:53.419906",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_cq6i"
+ ],
+"fields": [
+    {
+      "fieldname": "project",
+      "label": "Target Project",
+      "fieldtype": "Link",
+      "options": "Project",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "percentage",
+      "label": "Allocation %",
+      "fieldtype": "Percent",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "expense_account",
+      "label": "Target Expense Account (debit)",
+      "fieldtype": "Link",
+      "options": "Account",
+      "in_list_view": 1,
+      "reqd": 1
+    }
+  ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-06 10:56:53.419906",
+ "modified_by": "Administrator",
+ "module": "GI Accounting",
+ "name": "HM Project Allocation Target",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
