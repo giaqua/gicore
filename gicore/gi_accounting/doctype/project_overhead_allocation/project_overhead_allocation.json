@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:GIPOA-{#}",
  "creation": "2026-09-27 18:31:47.906816",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -18,7 +19,8 @@
   {
    "fieldname": "total_cost",
    "fieldtype": "Currency",
-   "label": "Total Cost"
+   "label": "Total Cost",
+   "read_only": 1
   },
   {
    "fieldname": "parent_accounts",
@@ -34,7 +36,8 @@
    "fieldname": "child_accounts",
    "fieldtype": "Table",
    "label": "Child Accounts",
-   "options": "Project Overhead Allocation Child Accounts"
+   "options": "Project Overhead Allocation Child Accounts",
+   "read_only": 1
   },
   {
    "fieldname": "from_date",
@@ -50,7 +53,8 @@
    "fieldname": "project_treated_water",
    "fieldtype": "Table",
    "label": "Project Treated Water",
-   "options": "Project Overhead Allocation Treated Water"
+   "options": "Project Overhead Allocation Treated Water",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_cxiv",
@@ -60,10 +64,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-27 19:12:43.501565",
+ "modified": "2026-09-27 21:11:25.068847",
  "modified_by": "Administrator",
  "module": "GI Accounting",
  "name": "Project Overhead Allocation",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -83,5 +88,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
