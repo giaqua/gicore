@@ -11,6 +11,8 @@
   "column_break_tmcm",
   "to_date",
   "total_cost",
+  "total_treated_water",
+  "cost_per_m3",
   "section_break_cxiv",
   "project_treated_water",
   "child_accounts"
@@ -59,12 +61,25 @@
   {
    "fieldname": "section_break_cxiv",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "total_treated_water",
+   "fieldtype": "Float",
+   "label": "Total Treated Water",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cost_per_m3",
+   "fieldtype": "Currency",
+   "label": "Cost Per M3",
+   "precision": "9",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-27 21:11:25.068847",
+ "modified": "2026-09-28 13:58:57.055044",
  "modified_by": "Administrator",
  "module": "GI Accounting",
  "name": "Project Overhead Allocation",

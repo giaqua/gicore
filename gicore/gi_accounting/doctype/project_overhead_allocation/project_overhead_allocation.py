@@ -126,21 +126,28 @@ class ProjectOverheadAllocation(Document):
 	# ------------------------------------------------------------------
 	def allocate_cost(self):
 		rows = self.project_treated_water
-		total_water = sum(flt(d.treated_water) for d in rows)
+		self.total_treated_water = flt(
+			sum(flt(d.treated_water) for d in rows),
+			self.precision("total_treated_water"),
+		)
+
 		precision = self.precision("allocated_amount", "project_treated_water")
 
-		if not total_water:
+		if not self.total_treated_water:
+			self.cost_per_m3 = 0
 			for d in rows:
 				d.allocated_amount = 0
 			return
 
+		# keep full precision for the calculation, round only for display
+		rate = flt(self.total_cost) / flt(self.total_treated_water)
+		self.cost_per_m3 = flt(rate, self.precision("cost_per_m3"))
+
 		allocated = 0
 		for i, d in enumerate(rows):
 			if i == len(rows) - 1:
-				# last row absorbs rounding difference so the sum equals total_cost exactly
+				# last row absorbs rounding so the sum equals total_cost exactly
 				d.allocated_amount = flt(flt(self.total_cost) - allocated, precision)
 			else:
-				d.allocated_amount = flt(
-					flt(self.total_cost) * flt(d.treated_water) / total_water, precision
-				)
+				d.allocated_amount = flt(flt(d.treated_water) * rate, precision)
 				allocated += d.allocated_amount
