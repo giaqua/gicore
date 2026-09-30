@@ -92,7 +92,7 @@ class ProjectOverheadAllocation(Document):
 		self.total_cost = flt(
 			sum(flt(d.amount) for d in self.child_accounts),
 			self.precision("total_cost"),
-		)
+		)* self.allocation_percentage / 100
 
 	# ------------------------------------------------------------------
 	def fetch_treated_water(self):
@@ -151,3 +151,54 @@ class ProjectOverheadAllocation(Document):
 			else:
 				d.allocated_amount = flt(flt(d.treated_water) * rate, precision)
 				allocated += d.allocated_amount
+
+
+	@frappe.whitelist()
+	def distribute_to_dor(self):
+		if self.is_new():
+			frappe.throw(_("Please save the document first"))
+
+		projects = [d.project for d in self.project_treated_water if d.project]
+		if not projects or not flt(self.total_treated_water):
+			frappe.throw(_("Nothing to distribute. Run Fetch & Allocate first."))
+
+		reports = frappe.db.sql(
+			f"""
+			SELECT name, `{DOR_TREATED_WATER_FIELD}` AS volume
+			FROM `tab{DOR_DOCTYPE}`
+			WHERE docstatus = 1
+				AND `{DOR_DATE_FIELD}` BETWEEN %(from_date)s AND %(to_date)s
+				AND `{DOR_PROJECT_FIELD}` IN %(projects)s
+			ORDER BY `{DOR_DATE_FIELD}`, name
+			""",
+			{"from_date": self.from_date, "to_date": self.to_date, "projects": projects},
+			as_dict=True,
+		)
+
+		if not reports:
+			frappe.throw(_("No Daily Operation Reports found in this period"))
+
+		# unrounded rate so totals stay exact
+		rate = flt(self.total_cost) / flt(self.total_treated_water)
+		precision = frappe.get_meta(DOR_DOCTYPE).get_field("overhead_cost").precision or 2
+		precision = int(precision)
+
+		distributed = 0
+		last_with_volume = max(i for i, r in enumerate(reports) if flt(r.volume)) if any(flt(r.volume) for r in reports) else -1
+
+		for i, r in enumerate(reports):
+			if i == last_with_volume:
+				# last report absorbs rounding so sum equals total_cost exactly
+				cost = flt(flt(self.total_cost) - distributed, precision)
+			else:
+				cost = flt(flt(r.volume) * rate, precision)
+				distributed += cost
+
+			frappe.db.set_value(
+				DOR_DOCTYPE,
+				r.name,
+				{"overhead_cost_per_m3": flt(self.cost_per_m3), "overhead_cost": cost},
+				update_modified=False,
+			)
+
+		return {"count": len(reports), "total": flt(self.total_cost)}
