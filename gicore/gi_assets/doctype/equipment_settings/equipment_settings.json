@@ -1,0 +1,160 @@
+{
+ "actions": [],
+ "creation": "2026-10-19 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_1",
+  "default_terms_template",
+  "default_site",
+  "require_signature",
+  "notify_employee",
+  "column_break_1",
+  "allow_negative_stock",
+  "block_separation_if_custody_open",
+  "section_break_2",
+  "reminder_period_months",
+  "last_reminder_on",
+  "column_break_2",
+  "warranty_alert_days",
+  "section_break_3",
+  "deduction_salary_component",
+  "section_break_4",
+  "sync_to_asset_movement",
+  "asset_receipt_location"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break",
+   "label": "Handover"
+  },
+  {
+   "fieldname": "default_terms_template",
+   "fieldtype": "Link",
+   "label": "Default Terms Template",
+   "options": "Terms and Conditions"
+  },
+  {
+   "fieldname": "default_site",
+   "fieldtype": "Link",
+   "label": "Default Site / Branch",
+   "options": "Branch"
+  },
+  {
+   "fieldname": "require_signature",
+   "fieldtype": "Check",
+   "label": "Require Employee Signature",
+   "default": "1"
+  },
+  {
+   "fieldname": "notify_employee",
+   "fieldtype": "Check",
+   "label": "Email Employee on Handover",
+   "default": "1"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allow_negative_stock",
+   "fieldtype": "Check",
+   "label": "Allow Negative Stock (quantity items)",
+   "default": "0"
+  },
+  {
+   "fieldname": "block_separation_if_custody_open",
+   "fieldtype": "Check",
+   "label": "Block Employee Exit if Custody is Open",
+   "default": "1",
+   "description": "Blocks Employee status Left, Employee Separation and Full and Final Statement."
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break",
+   "label": "Reminders"
+  },
+  {
+   "fieldname": "reminder_period_months",
+   "fieldtype": "Int",
+   "label": "Custody Confirmation Every (months)",
+   "default": "6",
+   "description": "0 disables the periodic email to employees."
+  },
+  {
+   "fieldname": "last_reminder_on",
+   "fieldtype": "Date",
+   "label": "Last Confirmation Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "warranty_alert_days",
+   "fieldtype": "Int",
+   "label": "Warranty Alert (days)",
+   "default": "30"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break",
+   "label": "Salary Deduction"
+  },
+  {
+   "fieldname": "deduction_salary_component",
+   "fieldtype": "Link",
+   "label": "Deduction Salary Component",
+   "options": "Salary Component",
+   "description": "Used when creating an Additional Salary from an Equipment Incident."
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break",
+   "label": "ERPNext Asset Sync (optional)"
+  },
+  {
+   "fieldname": "sync_to_asset_movement",
+   "fieldtype": "Check",
+   "label": "Sync to Asset Movement",
+   "default": "0",
+   "description": "When on, handovers of equipment with a Linked Asset also create Asset Movements."
+  },
+  {
+   "fieldname": "asset_receipt_location",
+   "fieldtype": "Link",
+   "label": "Asset Receipt Location",
+   "options": "Location",
+   "depends_on": "eval:doc.sync_to_asset_movement",
+   "mandatory_depends_on": "eval:doc.sync_to_asset_movement",
+   "description": "Location the Asset moves to when equipment is returned."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-19 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "GI Assets",
+ "name": "Equipment Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "Equipment Manager",
+   "read": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "issingle": 1,
+ "document_type": "Setup"
+}

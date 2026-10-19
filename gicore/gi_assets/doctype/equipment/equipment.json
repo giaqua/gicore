@@ -1,0 +1,288 @@
+{
+ "actions": [],
+ "autoname": "GIEQ-.#####",
+ "creation": "2026-10-19 14:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "equipment_name",
+  "category",
+  "serial_no",
+  "brand",
+  "model",
+  "column_break_1",
+  "status",
+  "current_custodian",
+  "custodian_name",
+  "condition",
+  "site",
+  "company",
+  "identification_column",
+  "mac_address",
+  "imei",
+  "item_code",
+  "barcode",
+  "image",
+  "purchase_and_warranty_column",
+  "purchase_date",
+  "purchase_cost",
+  "supplier",
+  "purchase_invoice",
+  "warranty_expiry",
+  "section_break_3",
+  "linked_asset",
+  "column_break_sngg",
+  "accessories_included",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "equipment_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Equipment Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Equipment Category",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Serial No",
+   "search_index": 1
+  },
+  {
+   "fieldname": "brand",
+   "fieldtype": "Link",
+   "label": "Brand",
+   "options": "Equipment Brand"
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Link",
+   "label": "Model",
+   "options": "Equipment Model"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "In Stock",
+   "description": "Controlled by handovers and incidents after creation.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "options": "In Stock\nIssued\nIn Repair\nLost\nScrapped",
+   "read_only_depends_on": "eval:!doc.__islocal"
+  },
+  {
+   "description": "Leave empty for new stock. Fill only to record equipment that is already with an employee (opening custody).",
+   "fieldname": "current_custodian",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Current Custodian",
+   "no_copy": 1,
+   "options": "Employee",
+   "read_only_depends_on": "eval:!doc.__islocal",
+   "search_index": 1
+  },
+  {
+   "fieldname": "custodian_name",
+   "fieldtype": "Data",
+   "label": "Custodian Name",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "Good",
+   "fieldname": "condition",
+   "fieldtype": "Select",
+   "label": "Condition",
+   "options": "New\nGood\nFair\nDamaged"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Site / Branch",
+   "options": "Branch"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "mac_address",
+   "fieldtype": "Data",
+   "label": "MAC Address"
+  },
+  {
+   "fieldname": "imei",
+   "fieldtype": "Data",
+   "label": "IMEI"
+  },
+  {
+   "description": "Reference to the purchased Item master, if you use one.",
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item (optional)",
+   "options": "Item"
+  },
+  {
+   "fieldname": "barcode",
+   "fieldtype": "Barcode",
+   "label": "Barcode",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "label": "Image"
+  },
+  {
+   "fieldname": "purchase_date",
+   "fieldtype": "Date",
+   "label": "Purchase Date"
+  },
+  {
+   "fieldname": "purchase_cost",
+   "fieldtype": "Currency",
+   "label": "Purchase Cost"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "purchase_invoice",
+   "fieldtype": "Link",
+   "label": "Purchase Invoice",
+   "options": "Purchase Invoice"
+  },
+  {
+   "fieldname": "warranty_expiry",
+   "fieldtype": "Date",
+   "label": "Warranty Expiry"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break",
+   "label": "ERPNext Asset Link (optional)"
+  },
+  {
+   "description": "Optional. Only needed if finance also registers this unit as an Asset. Custody works without it.",
+   "fieldname": "linked_asset",
+   "fieldtype": "Link",
+   "label": "Linked Asset",
+   "no_copy": 1,
+   "options": "Asset"
+  },
+  {
+   "fieldname": "accessories_included",
+   "fieldtype": "Small Text",
+   "label": "Accessories Included"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "identification_column",
+   "fieldtype": "Column Break",
+   "label": "Identification"
+  },
+  {
+   "fieldname": "purchase_and_warranty_column",
+   "fieldtype": "Column Break",
+   "label": "Purchase and Warranty"
+  },
+  {
+   "fieldname": "column_break_sngg",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "image_field": "image",
+ "links": [],
+ "modified": "2026-10-19 15:28:51.877211",
+ "modified_by": "Administrator",
+ "module": "GI Assets",
+ "name": "Equipment",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Equipment Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Equipment User",
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Employee"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "equipment_name,serial_no,category,current_custodian",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "equipment_name",
+ "track_changes": 1
+}
