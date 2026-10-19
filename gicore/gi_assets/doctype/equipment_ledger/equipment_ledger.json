@@ -10,6 +10,7 @@
   "category",
   "equipment",
   "employee",
+  "custodian",
   "column_break_1",
   "qty",
   "stock_effect",
@@ -157,11 +158,18 @@
    "fieldtype": "Small Text",
    "label": "Remarks",
    "read_only": 1
+  },
+  {
+   "fieldname": "custodian",
+   "fieldtype": "Link",
+   "label": "Custodian",
+   "options": "GI Custodian",
+   "read_only": 1
   }
  ],
  "in_create": 1,
  "links": [],
- "modified": "2026-10-19 14:48:47.568150",
+ "modified": "2026-10-19 16:08:29.752771",
  "modified_by": "Administrator",
  "module": "GI Assets",
  "name": "Equipment Ledger",

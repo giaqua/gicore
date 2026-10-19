@@ -24,7 +24,7 @@ class Equipment(Document):
 		self.validate_system_fields()
 		self.barcode = self.name
 		self.custodian_name = (
-			frappe.db.get_value("Employee", self.current_custodian, "employee_name")
+			frappe.db.get_value("GI Custodian", self.current_custodian, "custodian_name")
 			if self.current_custodian
 			else None
 		)
@@ -108,7 +108,8 @@ class Equipment(Document):
 				qty=1,
 				stock_effect=-1,
 				custody_effect=1,
-				employee=self.current_custodian,
+				employee=frappe.db.get_value("GI Custodian", self.current_custodian, "related_employee") or None,
+				custodian=self.current_custodian,
 				equipment=self.name,
 				site=self.site,
 				company=self.company,

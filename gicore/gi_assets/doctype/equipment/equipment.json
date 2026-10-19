@@ -97,7 +97,7 @@
    "in_standard_filter": 1,
    "label": "Current Custodian",
    "no_copy": 1,
-   "options": "Employee",
+   "options": "GI Custodian",
    "read_only_depends_on": "eval:!doc.__islocal",
    "search_index": 1
   },
@@ -226,7 +226,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2026-10-19 15:28:51.877211",
+ "modified": "2026-10-19 15:59:44.473380",
  "modified_by": "Administrator",
  "module": "GI Assets",
  "name": "Equipment",
