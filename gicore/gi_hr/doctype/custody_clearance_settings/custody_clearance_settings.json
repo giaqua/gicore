@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "notify_approvers",
+  "on_behalf_role",
   "section_departments",
   "departments"
  ],
@@ -16,6 +17,14 @@
    "fieldname": "notify_approvers",
    "fieldtype": "Check",
    "label": "Notify Approvers and Employee"
+  },
+  {
+   "default": "HR Manager",
+   "description": "Users with this role (and System Manager) can acknowledge a clearance for an employee who has no user account",
+   "fieldname": "on_behalf_role",
+   "fieldtype": "Link",
+   "label": "Role Allowed to Acknowledge on Employee's Behalf",
+   "options": "Role"
   },
   {
    "fieldname": "section_departments",

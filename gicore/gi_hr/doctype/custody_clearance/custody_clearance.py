@@ -122,7 +122,15 @@ class CustodyClearance(Document):
 		def norm(value):
 			return "" if value in (None, "") else str(value)
 
-		for field in ("employee", "overall_status", "employee_acknowledgement", "employee_signature"):
+		for field in (
+			"employee",
+			"overall_status",
+			"employee_acknowledgement",
+			"employee_signature",
+			"acknowledged_by_hr",
+			"acknowledged_by",
+			"signed_copy",
+		):
 			if norm(before.get(field)) != norm(self.get(field)):
 				frappe.throw(
 					_("{0} can only be changed through the clearance actions").format(
@@ -209,8 +217,13 @@ class CustodyClearance(Document):
 							self.employee_name, row.department
 						),
 					)
-		if self.overall_status == "Pending Employee Acknowledgement" and self.user_id:
-			wanted[self.user_id] = _("All departments cleared your custody. Please acknowledge the clearance.")
+		if self.overall_status == "Pending Employee Acknowledgement":
+			if self.user_id:
+				wanted[self.user_id] = _("All departments cleared your custody. Please acknowledge the clearance.")
+			elif self.owner:
+				wanted[self.owner] = _(
+					"{0} has no user. Collect the signed clearance copy and acknowledge on their behalf."
+				).format(self.employee_name)
 		if self.overall_status == "On Hold" and self.owner:
 			wanted.setdefault(self.owner, _("A department reported outstanding custody for {0}").format(self.employee_name))
 		return wanted
@@ -244,12 +257,9 @@ class CustodyClearance(Document):
 
 
 # ------------------------------------------------------------------ helpers
-# def _get_doc(name, for_update=True):
-# 	doc = frappe.get_doc(DOCTYPE, name)
-# 	if for_update:
-# 		doc.lock()
-# 	return doc
 def _get_doc(name, for_update=True):
+	# Row-level DB lock held until the request's transaction ends. Do not use
+	# Document.lock(): it is a file lock that blocks our own doc.save() and can go stale.
 	if for_update:
 		frappe.db.get_value(DOCTYPE, name, "name", for_update=True)
 	return frappe.get_doc(DOCTYPE, name)
@@ -284,17 +294,17 @@ def send_for_clearance(name):
 		frappe.throw(_("Only a Draft clearance can be sent."))
 	if not doc.clearance_departments:
 		frappe.throw(_("Add at least one department before sending."))
-	if not doc.user_id:
-		frappe.throw(
-			_("Employee {0} has no User ID. Link a user on the Employee record so they can acknowledge.").format(
-				frappe.bold(doc.employee)
-			)
-		)
-
 	doc.flags.in_clearance_action = True
 	doc.overall_status = "In Clearance"
 	doc.save()
 	doc.add_comment("Info", _("Sent to {0} departments for parallel clearance").format(len(doc.clearance_departments)))
+	if not doc.user_id:
+		frappe.msgprint(
+			_("{0} has no user account. HR will acknowledge on the employee's behalf with a signed copy.").format(
+				frappe.bold(doc.employee_name)
+			),
+			alert=True,
+		)
 	return doc.overall_status
 
 
@@ -360,24 +370,89 @@ def acknowledge(name, signature=None):
 	doc = _get_doc(name)
 
 	employee_user = frappe.db.get_value("Employee", doc.employee, "user_id")
-	if not employee_user or frappe.session.user != employee_user:
+	if not employee_user:
+		frappe.throw(
+			_("This employee has no user account. HR must acknowledge on the employee's behalf."),
+			frappe.PermissionError,
+		)
+	if frappe.session.user != employee_user:
 		frappe.throw(
 			_("Only the employee on this clearance can acknowledge it."), frappe.PermissionError
 		)
 	if doc.docstatus != 0 or doc.overall_status != "Pending Employee Acknowledgement":
 		frappe.throw(_("This clearance is not waiting for your acknowledgement."))
 
+	doc.employee_signature = signature or None
+	_complete(doc)
+	doc.add_comment("Info", _("Employee acknowledged the clearance"))
+	_notify(doc.owner, _("{0} acknowledged the custody clearance. Completed.").format(doc.employee_name), doc)
+	return doc.overall_status
+
+
+@frappe.whitelist()
+def acknowledge_on_behalf(name, signed_copy):
+	"""HR acknowledges for an employee who has no user account, backed by a signed paper copy."""
+	if not _can_acknowledge_on_behalf():
+		frappe.throw(
+			_("Only users with the role {0} can acknowledge on an employee's behalf.").format(
+				frappe.bold(_get_behalf_role())
+			),
+			frappe.PermissionError,
+		)
+
+	doc = _get_doc(name)
+	if frappe.db.get_value("Employee", doc.employee, "user_id"):
+		frappe.throw(_("This employee has a user account and must acknowledge the clearance personally."))
+	if doc.docstatus != 0 or doc.overall_status != "Pending Employee Acknowledgement":
+		frappe.throw(_("This clearance is not waiting for acknowledgement."))
+	if not signed_copy:
+		frappe.throw(_("Attach the signed clearance copy first."))
+
+	file_name = frappe.db.get_value("File", {"file_url": signed_copy}, "name")
+	if not file_name:
+		frappe.throw(_("The signed copy was not found. Upload it again."))
+	frappe.db.set_value(
+		"File",
+		file_name,
+		{"attached_to_doctype": DOCTYPE, "attached_to_name": doc.name, "attached_to_field": "signed_copy"},
+	)
+
+	doc.acknowledged_by_hr = 1
+	doc.acknowledged_by = frappe.session.user
+	doc.signed_copy = signed_copy
+	_complete(doc)
+
+	doc.add_comment(
+		"Info",
+		_("{0} acknowledged on behalf of the employee, signed copy attached").format(
+			get_fullname(frappe.session.user)
+		),
+	)
+	_notify(doc.owner, _("{0} custody clearance completed (acknowledged by HR).").format(doc.employee_name), doc)
+	return doc.overall_status
+
+
+def _get_behalf_role():
+	return frappe.db.get_single_value(SETTINGS, "on_behalf_role") or "HR Manager"
+
+
+def _can_acknowledge_on_behalf():
+	roles = set(frappe.get_roles())
+	return _get_behalf_role() in roles or "System Manager" in roles
+
+
+@frappe.whitelist()
+def can_acknowledge_on_behalf():
+	return _can_acknowledge_on_behalf()
+
+
+def _complete(doc):
 	doc.flags.in_clearance_action = True
 	doc.flags.ignore_permissions = True
 	doc.employee_acknowledgement = 1
 	doc.acknowledgement_on = now_datetime()
-	doc.employee_signature = signature or None
 	doc.overall_status = "Completed"
 	doc.submit()
-
-	doc.add_comment("Info", _("Employee acknowledged the clearance"))
-	_notify(doc.owner, _("{0} acknowledged the custody clearance. Completed.").format(doc.employee_name), doc)
-	return doc.overall_status
 
 
 # ------------------------------------------------------------- permissions

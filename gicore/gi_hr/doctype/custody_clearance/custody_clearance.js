@@ -73,8 +73,19 @@ frappe.ui.form.on("Custody Clearance", {
 				});
 		}
 
-		// 3) Employee acknowledgement
-		if (status === "Pending Employee Acknowledgement" && frm.doc.user_id === user) {
+		// 3a) HR acknowledges for an employee who has no user account
+		if (status === "Pending Employee Acknowledgement" && !frm.doc.user_id) {
+			frappe.call({ method: `${CC_METHOD}.can_acknowledge_on_behalf` }).then((r) => {
+				if (!r.message) return;
+				frm.remove_custom_button(__("Acknowledge on Behalf of Employee"));
+				frm.add_custom_button(__("Acknowledge on Behalf of Employee"), () =>
+					frm.events.behalf_dialog(frm)
+				).addClass("btn-primary");
+			});
+		}
+
+		// 3b) Employee acknowledgement
+		if (status === "Pending Employee Acknowledgement" && frm.doc.user_id && frm.doc.user_id === user) {
 			frm.add_custom_button(__("I Acknowledge Clearance"), () => frm.events.acknowledge_dialog(frm)).addClass(
 				"btn-primary"
 			);
@@ -130,6 +141,44 @@ frappe.ui.form.on("Custody Clearance", {
 							amount_due: values.amount_due || 0,
 							remarks: values.remarks,
 						},
+						freeze: true,
+					})
+					.then(() => {
+						d.hide();
+						frm.reload_doc();
+					});
+			},
+		});
+		d.show();
+	},
+
+	behalf_dialog(frm) {
+		const d = new frappe.ui.Dialog({
+			title: __("Acknowledge on Behalf of Employee"),
+			fields: [
+				{
+					fieldname: "note",
+					fieldtype: "HTML",
+					options: `<p>${__(
+						"{0} has no user account. Print the clearance, have the employee sign it, then attach the signed copy here.",
+						[frappe.utils.escape_html(frm.doc.employee_name)]
+					)}</p>`,
+				},
+				{ fieldname: "signed_copy", fieldtype: "Attach", label: __("Signed Clearance Copy"), reqd: 1 },
+				{
+					fieldname: "confirm",
+					fieldtype: "Check",
+					label: __("I confirm the employee signed this clearance"),
+					reqd: 1,
+				},
+			],
+			primary_action_label: __("Acknowledge"),
+			primary_action(values) {
+				if (!values.signed_copy || !values.confirm) return;
+				frappe
+					.call({
+						method: `${CC_METHOD}.acknowledge_on_behalf`,
+						args: { name: frm.doc.name, signed_copy: values.signed_copy },
 						freeze: true,
 					})
 					.then(() => {
