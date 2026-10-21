@@ -1,0 +1,268 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-10-21 16:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "employee",
+  "employee_name",
+  "department",
+  "designation",
+  "company",
+  "user_id",
+  "column_break_main",
+  "clearance_type",
+  "request_date",
+  "last_working_day",
+  "overall_status",
+  "total_amount_due",
+  "section_departments",
+  "clearance_departments",
+  "section_ack",
+  "employee_acknowledgement",
+  "acknowledgement_on",
+  "column_break_ack",
+  "employee_signature",
+  "section_hr",
+  "hr_remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "CCL-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "CCL-.YYYY.-",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "user_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Employee User",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Resignation",
+   "fieldname": "clearance_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Clearance Type",
+   "options": "Resignation\nTermination\nTransfer\nLong Leave\nOther",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "label": "Request Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "last_working_day",
+   "fieldtype": "Date",
+   "label": "Last Working Day"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "overall_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "options": "Draft\nIn Clearance\nOn Hold\nPending Employee Acknowledgement\nCompleted\nCancelled",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "total_amount_due",
+   "fieldtype": "Currency",
+   "label": "Total Amount Due",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_departments",
+   "fieldtype": "Section Break",
+   "label": "Department Clearance (parallel approval)"
+  },
+  {
+   "fieldname": "clearance_departments",
+   "fieldtype": "Table",
+   "label": "Departments",
+   "options": "Custody Clearance Department"
+  },
+  {
+   "depends_on": "eval:in_list(['Pending Employee Acknowledgement','Completed'], doc.overall_status)",
+   "fieldname": "section_ack",
+   "fieldtype": "Section Break",
+   "label": "Employee Acknowledgement"
+  },
+  {
+   "default": "0",
+   "fieldname": "employee_acknowledgement",
+   "fieldtype": "Check",
+   "label": "Employee Acknowledged Clearance",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "acknowledgement_on",
+   "fieldtype": "Datetime",
+   "label": "Acknowledged On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ack",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_signature",
+   "fieldtype": "Signature",
+   "label": "Employee Signature",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_hr",
+   "fieldtype": "Section Break",
+   "label": "HR Notes"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "hr_remarks",
+   "fieldtype": "Small Text",
+   "label": "HR Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Custody Clearance",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "GI HR",
+ "name": "Custody Clearance",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Employee"
+  }
+ ],
+ "search_fields": "employee,employee_name,overall_status",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "employee_name",
+ "track_changes": 1
+}

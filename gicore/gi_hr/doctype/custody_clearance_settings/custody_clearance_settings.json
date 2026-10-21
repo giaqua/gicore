@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "notify_approvers",
+  "section_departments",
+  "departments"
+ ],
+ "fields": [
+  {
+   "default": "1",
+   "description": "Assign a ToDo and send a notification to each approver and to the employee",
+   "fieldname": "notify_approvers",
+   "fieldtype": "Check",
+   "label": "Notify Approvers and Employee"
+  },
+  {
+   "fieldname": "section_departments",
+   "fieldtype": "Section Break",
+   "label": "Departments Required to Clear Custody"
+  },
+  {
+   "description": "All active rows are copied to every new Custody Clearance and are approved in parallel",
+   "fieldname": "departments",
+   "fieldtype": "Table",
+   "label": "Departments",
+   "options": "Custody Clearance Settings Department"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-21 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "GI HR",
+ "name": "Custody Clearance Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}
