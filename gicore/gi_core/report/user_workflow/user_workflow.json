@@ -1,0 +1,53 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "width": 0
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "DocType",
+   "options": "DocType",
+   "width": 0
+  }
+ ],
+ "creation": "2026-10-26 12:26:59.473715",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": null,
+ "modified": "2026-10-26 12:30:03.298853",
+ "modified_by": "Administrator",
+ "module": "GI Core",
+ "name": "User Workflow",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "SELECT\r\n    hr.parent        AS \"User:Link/User:220\",\r\n    u.full_name      AS \"Full Name::180\",\r\n    w.document_type  AS \"DocType:Link/DocType:180\",\r\n    w.name           AS \"Workflow:Link/Workflow:180\",\r\n    r.role           AS \"Role:Link/Role:150\",\r\n    GROUP_CONCAT(DISTINCT r.source ORDER BY r.source SEPARATOR ', ') AS \"Role Used In::160\"\r\nFROM (\r\n    SELECT parent AS workflow, allowed AS role, 'Transition' AS source\r\n    FROM `tabWorkflow Transition`\r\n    UNION ALL\r\n    SELECT parent AS workflow, allow_edit AS role, 'State (Edit)' AS source\r\n    FROM `tabWorkflow Document State`\r\n) r\r\nINNER JOIN `tabWorkflow` w ON w.name = r.workflow AND w.is_active = 1\r\nINNER JOIN `tabHas Role` hr ON hr.role = r.role AND hr.parenttype = 'User'\r\nINNER JOIN `tabUser` u ON u.name = hr.parent AND u.enabled = 1\r\nWHERE\r\n    (%(user)s IS NULL OR %(user)s = '' OR hr.parent = %(user)s)\r\n    AND (%(document_type)s IS NULL OR %(document_type)s = '' OR w.document_type = %(document_type)s)\r\nGROUP BY hr.parent, u.full_name, w.document_type, w.name, r.role\r\nORDER BY hr.parent, w.document_type",
+ "ref_doctype": "User",
+ "report_name": "User Workflow",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Admin"
+  },
+  {
+   "role": "Employee Self Service"
+  },
+  {
+   "role": "Employee Master Data Manager"
+  }
+ ],
+ "timeout": 0
+}
