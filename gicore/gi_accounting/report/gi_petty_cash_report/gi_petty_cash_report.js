@@ -50,6 +50,12 @@ frappe.query_reports["GI Petty Cash Report"] = {
 			options: "Project",
 		},
 		{
+			fieldname: "group_by",
+			label: __("Group By"),
+			fieldtype: "Select",
+			options: ["", "Project", "Expense Account", "Petty Cash Account"],
+		},
+		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",

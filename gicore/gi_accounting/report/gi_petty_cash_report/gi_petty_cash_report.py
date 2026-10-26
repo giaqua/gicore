@@ -16,7 +16,41 @@ def execute(filters=None):
         data += get_purchase_invoice_data(filters)
 
     data.sort(key=lambda d: (d.get("date") or "", d.get("transaction") or ""))
+
+    group_by = GROUP_FIELDS.get(filters.get("group_by"))
+    if group_by:
+        return get_grouped_columns(group_by), group_data(data, group_by)
     return get_columns(), data
+
+
+GROUP_FIELDS = {
+    "Project": "project",
+    "Expense Account": "expense_account",
+    "Petty Cash Account": "petty_cash_account",
+}
+
+
+def get_grouped_columns(group_by):
+    meta = {
+        "project": {"label": _("Project"), "fieldtype": "Link", "options": "Project"},
+        "expense_account": {"label": _("Expense Account"), "fieldtype": "Link", "options": "Account"},
+        "petty_cash_account": {"label": _("Petty Cash Account"), "fieldtype": "Link", "options": "Account"},
+    }[group_by]
+    return [
+        {**meta, "fieldname": group_by, "width": 280},
+        {"label": _("No. of Lines"), "fieldname": "count", "fieldtype": "Int", "width": 110},
+        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "width": 140},
+    ]
+
+
+def group_data(data, group_by):
+    groups = {}
+    for d in data:
+        key = d.get(group_by) or ""
+        g = groups.setdefault(key, {group_by: key, "count": 0, "amount": 0.0})
+        g["count"] += 1
+        g["amount"] += d.get("amount") or 0
+    return sorted(groups.values(), key=lambda g: g[group_by])
 
 
 def get_columns():
