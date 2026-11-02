@@ -19,8 +19,14 @@ def execute(filters=None):
 
     group_by = GROUP_FIELDS.get(filters.get("group_by"))
     if group_by:
-        return get_grouped_columns(group_by), group_data(data, group_by)
+        data = group_data(data, group_by)
+    else:
+        data.append(total_row(sum(d.get("amount") or 0 for d in data)))
     return get_columns(), data
+
+
+def total_row(amount):
+    return {"expense_account": _("Total"), "amount": amount, "is_total_row": 1}
 
 
 GROUP_FIELDS = {
@@ -44,13 +50,23 @@ def get_grouped_columns(group_by):
 
 
 def group_data(data, group_by):
+    """Group header row (with subtotal) followed by all its detail rows."""
     groups = {}
     for d in data:
-        key = d.get(group_by) or ""
-        g = groups.setdefault(key, {group_by: key, "count": 0, "amount": 0.0})
-        g["count"] += 1
-        g["amount"] += d.get("amount") or 0
-    return sorted(groups.values(), key=lambda g: g[group_by])
+        groups.setdefault(d.get(group_by) or "", []).append(d)
+
+    out, grand = [], 0.0
+    for key in sorted(groups):
+        rows = groups[key]
+        subtotal = sum(r.get("amount") or 0 for r in rows)
+        grand += subtotal
+        out.append({group_by: key or _("Not Set"), "amount": subtotal, "is_group_row": 1})
+        for r in rows:
+            r = dict(r)
+            r[group_by] = ""  # shown on the header row above
+            out.append(r)
+    out.append(total_row(grand))
+    return out
 
 
 def get_columns():

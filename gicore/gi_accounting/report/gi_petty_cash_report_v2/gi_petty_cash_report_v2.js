@@ -1,4 +1,11 @@
 frappe.query_reports["GI Petty Cash Report V2"] = {
+	formatter: function (value, row, column, data, default_formatter) {
+		value = default_formatter(value, row, column, data);
+		if (data && (data.is_group_row || data.is_total_row)) {
+			value = "<b>" + value + "</b>";
+		}
+		return value;
+	},
 	filters: [
 		{
 			fieldname: "company",
