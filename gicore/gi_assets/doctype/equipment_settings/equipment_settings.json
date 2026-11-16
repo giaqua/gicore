@@ -21,7 +21,13 @@
   "deduction_salary_component",
   "section_break_4",
   "sync_to_asset_movement",
-  "asset_receipt_location"
+  "asset_receipt_location",
+  "section_break_5",
+  "demo_data_help",
+  "create_demo_data",
+  "delete_demo_data",
+  "demo_data_created",
+  "demo_data_log"
  ],
  "fields": [
   {
@@ -130,6 +136,44 @@
    "depends_on": "eval:doc.sync_to_asset_movement",
    "mandatory_depends_on": "eval:doc.sync_to_asset_movement",
    "description": "Location the Asset moves to when equipment is returned."
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break",
+   "label": "Demo Data"
+  },
+  {
+   "fieldname": "demo_data_help",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted'>Fill the module with sample equipment, stock, handovers, an incident and a request, so you can try every feature or train users. It uses two existing <b>Active</b> employees and never touches your own categories or equipment. <b>Delete Demo Data</b> removes everything the demo created, and anything later created against the demo categories or demo equipment.</p>",
+   "label": "Demo Data Help"
+  },
+  {
+   "fieldname": "create_demo_data",
+   "fieldtype": "Button",
+   "label": "Create Demo Data",
+   "depends_on": "eval:!doc.demo_data_created"
+  },
+  {
+   "fieldname": "delete_demo_data",
+   "fieldtype": "Button",
+   "label": "Delete Demo Data",
+   "depends_on": "eval:doc.demo_data_created"
+  },
+  {
+   "fieldname": "demo_data_created",
+   "fieldtype": "Check",
+   "label": "Demo Data Exists",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "demo_data_log",
+   "fieldtype": "Long Text",
+   "label": "Demo Data Log",
+   "read_only": 1,
+   "hidden": 1,
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 0,

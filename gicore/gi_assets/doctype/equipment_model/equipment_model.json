@@ -1,31 +1,65 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:equipment_model_name",
- "creation": "2026-10-19 15:25:37.443232",
+ "autoname": "format:{brand}-{model_name}",
+ "creation": "2026-11-16 08:30:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "equipment_model_name"
+  "model_name",
+  "brand",
+  "category",
+  "disabled",
+  "image",
+  "specifications"
  ],
  "fields": [
   {
-   "fieldname": "equipment_model_name",
+   "fieldname": "model_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Equipment Model Name",
+   "label": "Model Name",
    "reqd": 1,
-   "unique": 1
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "brand",
+   "fieldtype": "Link",
+   "label": "Brand",
+   "options": "Equipment Brand",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Equipment Category",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "label": "Image"
+  },
+  {
+   "fieldname": "specifications",
+   "fieldtype": "Small Text",
+   "label": "Specifications"
   }
  ],
- "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-19 15:26:09.143449",
+ "modified": "2026-11-16 08:30:00",
  "modified_by": "Administrator",
  "module": "GI Assets",
  "name": "Equipment Model",
- "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -39,11 +73,25 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
   }
  ],
- "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 20,
+ "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "model_name",
+ "search_fields": "model_name,brand",
+ "track_changes": 1
 }

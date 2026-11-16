@@ -1,0 +1,225 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>GI Assets</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Equipment\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Available\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Issued\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"In Repair\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Handover\", \"col\": 3}}, {\"id\": \"sc5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Request\", \"col\": 3}}, {\"id\": \"sc6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Incident\", \"col\": 3}}, {\"id\": \"sc7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ledger\", \"col\": 3}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Masters\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Transactions\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Ledger & Settings\", \"col\": 4}}]",
+ "creation": "2026-11-16 09:30:00",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "assets",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "GI Assets",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Masters",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment",
+   "link_count": 0,
+   "link_to": "Equipment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Category",
+   "link_count": 0,
+   "link_to": "Equipment Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Brand",
+   "link_count": 0,
+   "link_to": "Equipment Brand",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Model",
+   "link_count": 0,
+   "link_to": "Equipment Model",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Kit",
+   "link_count": 0,
+   "link_to": "Equipment Kit",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transactions",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Request",
+   "link_count": 0,
+   "link_to": "Equipment Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Handover",
+   "link_count": 0,
+   "link_to": "Equipment Handover",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Incident",
+   "link_count": 0,
+   "link_to": "Equipment Incident",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Ledger & Settings",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Ledger",
+   "link_count": 0,
+   "link_to": "Equipment Ledger",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Settings",
+   "link_count": 0,
+   "link_to": "Equipment Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-16 09:30:00",
+ "modified_by": "Administrator",
+ "module": "GI Assets",
+ "name": "GI Assets",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 99.0,
+ "shortcuts": [
+  {
+   "label": "Equipment",
+   "link_to": "Equipment",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Blue"
+  },
+  {
+   "label": "Available",
+   "link_to": "Equipment",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Green",
+   "stats_filter": "{\"status\":\"Available\"}",
+   "format": "{} Available"
+  },
+  {
+   "label": "Issued",
+   "link_to": "Equipment",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Cyan",
+   "stats_filter": "{\"status\":\"Issued\"}",
+   "format": "{} Issued"
+  },
+  {
+   "label": "In Repair",
+   "link_to": "Equipment",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Orange",
+   "stats_filter": "{\"status\":\"In Repair\"}",
+   "format": "{} In Repair"
+  },
+  {
+   "label": "Handover",
+   "link_to": "Equipment Handover",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Purple"
+  },
+  {
+   "label": "Request",
+   "link_to": "Equipment Request",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Grey"
+  },
+  {
+   "label": "Incident",
+   "link_to": "Equipment Incident",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "Red"
+  },
+  {
+   "label": "Ledger",
+   "link_to": "Equipment Ledger",
+   "type": "DocType",
+   "doc_view": "Report",
+   "color": "Grey"
+  }
+ ],
+ "title": "GI Assets"
+}

@@ -4,3 +4,4 @@ GI Support
 GI HR
 Relations
 GI Accounting
+GI Assets

@@ -1,38 +1,24 @@
 frappe.ui.form.on("Equipment", {
 	setup(frm) {
-		frm.set_query("category", () => ({ filters: { tracking_type: "Serialized" } }));
+		frm.set_query("model", () => ({ filters: frm.doc.brand ? { brand: frm.doc.brand } : {} }));
 	},
-
 	refresh(frm) {
 		if (frm.is_new()) return;
-
-		// frm.add_custom_button(__("Ledger"), () => {
-		// 	frappe.set_route("List", "Equipment Ledger", { equipment: frm.doc.name });
-		// }, __("View"));
-
-		// if (frm.doc.status === "Issued" || frm.doc.status === "In Stock") {
-		// 	frm.add_custom_button(__("Equipment Incident"), () => {
-		// 		frappe.new_doc("Equipment Incident", {
-		// 			equipment: frm.doc.name,
-		// 			category: frm.doc.category,
-		// 			employee: frm.doc.current_custodian,
-		// 		});
-		// 	}, __("Report"));
-		// }
-
-		// if (frm.doc.linked_asset) {
-		// 	frm.add_custom_button(__("Linked Asset"), () => {
-		// 		frappe.set_route("Form", "Asset", frm.doc.linked_asset);
-		// 	}, __("View"));
-		// }
-
-		const colors = {
-			"In Stock": "green",
-			Issued: "blue",
-			"In Repair": "orange",
-			Lost: "red",
-			Scrapped: "gray",
-		};
-		frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status] || "gray");
+		frm.add_custom_button(__("Info"), () => gi_equipments.show_info(frm.doc));
+		frm.add_custom_button(__("New Equipment"), () => gi_equipments.quick_add((doc) => frappe.set_route("Form", "Equipment", doc.name)));
+	},
+	model(frm) {
+		if (!frm.doc.model) return;
+		frappe.db.get_value("Equipment Model", frm.doc.model, ["brand", "category"]).then((r) => {
+			if (!r.message) return;
+			if (r.message.brand) frm.set_value("brand", r.message.brand);
+			if (r.message.category && !frm.doc.category) frm.set_value("category", r.message.category);
+		});
+	},
+	brand(frm) {
+		if (!frm.doc.model || !frm.doc.brand) return;
+		frappe.db.get_value("Equipment Model", frm.doc.model, "brand").then((r) => {
+			if (r.message && r.message.brand !== frm.doc.brand) frm.set_value("model", "");
+		});
 	},
 });
