@@ -1,0 +1,88 @@
+/* navbar_greeting.css */
+
+.hm-navbar-greeting {
+	--hm-accent: #f59e0b;
+	--hm-bg: rgba(245, 158, 11, 0.1);
+
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-inline: 12px;
+	padding: 4px 14px 4px 6px;
+	border-radius: 999px;
+	background: var(--hm-bg);
+	border: 1px solid color-mix(in srgb, var(--hm-accent) 25%, transparent);
+	white-space: nowrap;
+	line-height: 1.15;
+	transition: background 0.3s, border-color 0.3s;
+}
+
+/* colour per time of day */
+.hm-navbar-greeting[data-period="morning"]   { --hm-accent: #f59e0b; --hm-bg: rgba(245,158,11,.10); }
+.hm-navbar-greeting[data-period="afternoon"] { --hm-accent: #f97316; --hm-bg: rgba(249,115,22,.10); }
+.hm-navbar-greeting[data-period="evening"]   { --hm-accent: #8b5cf6; --hm-bg: rgba(139,92,246,.10); }
+.hm-navbar-greeting[data-period="night"]     { --hm-accent: #3b82f6; --hm-bg: rgba(59,130,246,.10); }
+
+.hm-greet-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--hm-accent);
+	color: #fff;
+	flex-shrink: 0;
+}
+.hm-greet-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+.hm-greet-body {
+	display: flex;
+	flex-direction: column;
+}
+.hm-greet-text {
+	font-size: 11px;
+	color: var(--text-muted);
+	letter-spacing: 0.2px;
+}
+.hm-greet-name {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-color);
+	max-width: 160px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hm-greet-divider {
+	width: 1px;
+	height: 22px;
+	background: color-mix(in srgb, var(--hm-accent) 35%, transparent);
+}
+.hm-greet-date {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+/* use space wisely on smaller screens */
+@media (max-width: 1199px) {
+	.hm-greet-divider,
+	.hm-greet-date {
+		display: none;
+	}
+}
+@media (max-width: 575px) {
+	.hm-navbar-greeting {
+		padding: 3px 10px 3px 4px;
+		margin-inline: 6px;
+	}
+	.hm-greet-text {
+		display: none;
+	}
+	.hm-greet-name {
+		max-width: 90px;
+	}
+}

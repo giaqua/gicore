@@ -1,5 +1,5 @@
 frappe.listview_settings["Equipment"] = {
-	add_fields: ["status", "brand", "model", "current_holder"],
+	add_fields: ["status", "brand", "model", "current_custodian"],
 	get_indicator(doc) {
 		let c = gi_equipments.STATUS_COLORS[doc.status] || "gray";
 		return [__(doc.status), c, "status,=," + doc.status];
@@ -15,7 +15,7 @@ frappe.listview_settings["Equipment"] = {
 			let s = r.message || {};
 			let cards = [
 				["gi-eq-c-total", "🗂️", s.total, __("Total"), null],
-				["gi-eq-c-avail", "✅", s.available, __("Available"), "Available"],
+				["gi-eq-c-avail", "✅", s.in_stock, __("In Stock"), "In Stock"],
 				["gi-eq-c-issued", "👤", s.issued, __("Issued"), "Issued"],
 				["gi-eq-c-repair", "🛠️", s.in_repair, __("In Repair"), "In Repair"],
 				["gi-eq-c-warr", "⏳", s.warranty_soon, __("Warranty ≤ 30d"), null],
