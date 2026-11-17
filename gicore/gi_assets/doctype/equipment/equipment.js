@@ -1,17 +1,41 @@
 frappe.ui.form.on("Equipment", {
 	setup(frm) {
 		frm.set_query("category", () => ({ filters: { tracking_type: "Serialized" } }));
+		// only models of the chosen brand
 		frm.set_query("model", () => ({ filters: frm.doc.brand ? { brand: frm.doc.brand } : {} }));
+	},
+
+	brand(frm) {
+		// a model that belongs to another brand no longer applies
+		if (!frm.doc.model || !frm.doc.brand) return;
+		frappe.db.get_value("Equipment Model", frm.doc.model, "brand").then((r) => {
+			if (r.message && r.message.brand !== frm.doc.brand) frm.set_value("model", null);
+		});
+	},
+
+	model(frm) {
+		if (!frm.doc.model) return;
+		frappe.db
+			.get_value("Equipment Model", frm.doc.model, ["brand", "category", "default_warranty_months"])
+			.then((r) => {
+				const m = r.message || {};
+				if (m.brand && m.brand !== frm.doc.brand) frm.set_value("brand", m.brand);
+				if (!frm.doc.category && m.category) frm.set_value("category", m.category);
+				if (!frm.doc.equipment_name) {
+					frm.set_value("equipment_name", [m.brand, frm.doc.model].filter(Boolean).join(" "));
+				}
+				if (m.default_warranty_months && frm.doc.purchase_date && !frm.doc.warranty_expiry) {
+					frm.set_value(
+						"warranty_expiry",
+						frappe.datetime.add_months(frm.doc.purchase_date, m.default_warranty_months)
+					);
+				}
+			});
 	},
 
 	refresh(frm) {
 		if (frm.is_new()) return;
 		const d = frm.doc;
-
-		frm.add_custom_button(__("Info"), () => gi_equipments.show_info(frm.doc));
-		frm.add_custom_button(__("New Equipment"), () =>
-			gi_equipments.quick_add((doc) => frappe.set_route("Form", "Equipment", doc.name))
-		);
 
 		// everything about this unit, in a new browser tab
 		frm.add_custom_button(__("360 View"), () => {
@@ -21,12 +45,11 @@ frappe.ui.form.on("Equipment", {
 		// ------------------------------------------------------------ Create: pre-filled transactions
 		const group = __("Create");
 		const add = (label, fn) => frm.add_custom_button(label, fn, group);
-		const status = (d.status || "").trim();
 
-		if (status === "In Stock") {
+		if (d.status === "In Stock") {
 			add(__("Issue to Employee"), () => equipment_form_handover(frm, "Issue"));
 		}
-		if (status === "Issued") {
+		if (d.status === "Issued") {
 			add(__("Return"), () => equipment_form_handover(frm, "Return"));
 			add(__("Transfer to Employee"), () => equipment_form_handover(frm, "Transfer"));
 			add(__("Replacement Request"), () => {
@@ -38,7 +61,7 @@ frappe.ui.form.on("Equipment", {
 				});
 			});
 		}
-		if (status === "In Stock" || status === "Issued") {
+		if (d.status === "In Stock" || d.status === "Issued") {
 			["Damage", "Loss", "Theft"].forEach((type) =>
 				add(__("Report {0}", [__(type)]), () => {
 					frappe.new_doc("Equipment Incident", {
@@ -56,7 +79,7 @@ frappe.ui.form.on("Equipment", {
 		const view = (label, fn) => frm.add_custom_button(label, fn, __("View"));
 		view(__("Ledger"), () => frappe.set_route("List", "Equipment Ledger", { equipment: d.name }));
 		view(__("Incidents"), () => frappe.set_route("List", "Equipment Incident", { equipment: d.name }));
-		if (status === "In Repair") {
+		if (d.status === "In Repair") {
 			view(__("Open Incident"), () => {
 				frappe.db
 					.get_value("Equipment Incident", { equipment: d.name, status: "Open" }, "name")
@@ -73,22 +96,6 @@ frappe.ui.form.on("Equipment", {
 
 		const colors = { "In Stock": "green", Issued: "blue", "In Repair": "orange", Lost: "red", Scrapped: "gray" };
 		frm.page.set_indicator(__(d.status), colors[d.status] || "gray");
-	},
-
-	model(frm) {
-		if (!frm.doc.model) return;
-		frappe.db.get_value("Equipment Model", frm.doc.model, ["brand", "category"]).then((r) => {
-			if (!r.message) return;
-			if (r.message.brand) frm.set_value("brand", r.message.brand);
-			if (r.message.category && !frm.doc.category) frm.set_value("category", r.message.category);
-		});
-	},
-
-	brand(frm) {
-		if (!frm.doc.model || !frm.doc.brand) return;
-		frappe.db.get_value("Equipment Model", frm.doc.model, "brand").then((r) => {
-			if (r.message && r.message.brand !== frm.doc.brand) frm.set_value("model", "");
-		});
 	},
 });
 

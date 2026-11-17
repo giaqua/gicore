@@ -73,8 +73,7 @@
    "fieldname": "model",
    "fieldtype": "Link",
    "label": "Model",
-   "options": "Equipment Model",
-   "in_standard_filter": 1
+   "options": "Equipment Model"
   },
   {
    "fieldname": "column_break_1",
@@ -237,7 +236,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-11-16 14:40:00.000000",
+ "modified": "2026-10-19 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "GI Assets",
  "name": "Equipment",

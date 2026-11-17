@@ -83,6 +83,27 @@ def create_demo_data():
 		make({"doctype": "Equipment Category", "category_name": CAT_MOUSE, "tracking_type": "Quantity", "description": "Demo data"})
 		make({"doctype": "Equipment Category", "category_name": CAT_KEYBOARD, "tracking_type": "Quantity", "description": "Demo data"})
 
+		# --- brands and models (reused if they already exist, so only new ones are tracked) ---
+		for brand_name, model_name, months, cat in (
+			("Dell", "Latitude 5440", 36, CAT_LAPTOP),
+			("Lenovo", "ThinkPad T14", 36, CAT_LAPTOP),
+			("HP", "ProBook 450 G10", 24, CAT_LAPTOP),
+			("Samsung", "Galaxy A54", 12, CAT_PHONE),
+		):
+			if not frappe.db.exists("Equipment Brand", brand_name):
+				make({"doctype": "Equipment Brand", "brand_name": brand_name, "description": "Demo data"})
+			if not frappe.db.exists("Equipment Model", model_name):
+				make(
+					{
+						"doctype": "Equipment Model",
+						"model_name": model_name,
+						"brand": brand_name,
+						"category": cat,
+						"default_warranty_months": months,
+						"description": "Demo data",
+					}
+				)
+
 		# --- serialized units -------------------------------------------------------------
 		def unit(category, name, serial, brand, model, warranty_days, cost, **extra):
 			values = {
@@ -329,6 +350,19 @@ def delete_demo_data():
 			frappe.db.delete("Equipment Ledger", {"category": ["in", cats]})
 
 		drop("Equipment", equipment)
+		# models and brands the demo created, unless real equipment uses them now
+		drop(
+			"Equipment Model",
+			[m for m in tracked.get("Equipment Model", ()) if not frappe.db.exists("Equipment", {"model": m})],
+		)
+		drop(
+			"Equipment Brand",
+			[
+				b
+				for b in tracked.get("Equipment Brand", ())
+				if not frappe.db.exists("Equipment", {"brand": b}) and not frappe.db.exists("Equipment Model", {"brand": b})
+			],
+		)
 		drop("Equipment Kit", tracked.get("Equipment Kit", ()))
 		drop("Equipment Category", cats)
 	finally:

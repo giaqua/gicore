@@ -1,0 +1,108 @@
+{%- set titles = {
+	"Issue": "Equipment Custody - Issue / تسليم عهدة",
+	"Return": "Equipment Custody - Return / استلام عهدة (إرجاع)",
+	"Transfer": "Equipment Custody - Transfer / نقل عهدة"
+} -%}
+<style>
+	.eh-wrap { font-size: 12px; }
+	.eh-title { text-align: center; margin: 4px 0 14px; font-size: 18px; font-weight: 700; }
+	.eh-meta, .eh-items { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+	.eh-meta td { padding: 4px 6px; vertical-align: top; }
+	.eh-meta td.k { color: #555; width: 18%; }
+	.eh-items th, .eh-items td { border: 1px solid #999; padding: 5px 6px; }
+	.eh-items th { background: #f1f1f1; text-align: left; }
+	.eh-terms { border: 1px solid #ccc; padding: 8px 10px; margin-bottom: 18px; font-size: 11px; }
+	.eh-sign { width: 100%; margin-top: 24px; }
+	.eh-sign td { width: 50%; vertical-align: bottom; padding: 6px; }
+	.eh-line { border-top: 1px solid #333; margin-top: 6px; padding-top: 3px; }
+</style>
+
+<div class="eh-wrap">
+	<div class="eh-title">{{ titles.get(doc.handover_type, "Equipment Custody") }}</div>
+
+	<table class="eh-meta">
+		<tr>
+			<td class="k">{{ _("Document No") }} / رقم المستند</td><td>{{ doc.name }}</td>
+			<td class="k">{{ _("Date") }} / التاريخ</td><td>{{ frappe.utils.formatdate(doc.posting_date) }}</td>
+		</tr>
+		<tr>
+			<td class="k">{{ _("Employee") }} / الموظف</td><td>{{ doc.employee_name }} ({{ doc.employee }})</td>
+			<td class="k">{{ _("Company") }} / الشركة</td><td>{{ doc.company }}</td>
+		</tr>
+		<tr>
+			<td class="k">{{ _("Department") }} / القسم</td><td>{{ doc.department or "" }}</td>
+			<td class="k">{{ _("Designation") }} / المسمى الوظيفي</td><td>{{ doc.designation or "" }}</td>
+		</tr>
+		{% if doc.handover_type == "Transfer" %}
+		<tr>
+			<td class="k">{{ _("Transferred From") }} / من الموظف</td>
+			<td colspan="3">{{ doc.from_employee_name }} ({{ doc.from_employee }})</td>
+		</tr>
+		{% endif %}
+		{% if doc.site %}
+		<tr>
+			<td class="k">{{ _("Site") }} / الموقع</td><td colspan="3">{{ doc.site }}</td>
+		</tr>
+		{% endif %}
+	</table>
+
+	<table class="eh-items">
+		<thead>
+			<tr>
+				<th style="width:4%">#</th>
+				<th>{{ _("Category") }}</th>
+				<th>{{ _("Equipment") }}</th>
+				<th>{{ _("Serial No") }}</th>
+				<th style="width:6%">{{ _("Qty") }}</th>
+				<th>{{ _("Condition") }}</th>
+				{% if doc.handover_type == "Return" %}<th>{{ _("Result") }}</th>{% endif %}
+				<th>{{ _("Accessories") }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for row in doc.items %}
+			<tr>
+				<td>{{ loop.index }}</td>
+				<td>{{ row.category }}</td>
+				<td>{{ row.equipment_name or row.equipment or "" }}</td>
+				<td>{{ row.serial_no or "" }}</td>
+				<td>{{ "%g"|format(row.qty or 0) }}</td>
+				<td>{% if doc.handover_type == "Return" %}{{ row.condition_in or "" }}{% else %}{{ row.condition_out or "" }}{% endif %}</td>
+				{% if doc.handover_type == "Return" %}<td>{{ row.return_result or "" }}</td>{% endif %}
+				<td>{{ row.accessories or "" }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	{% if doc.terms %}
+	<div class="eh-terms">
+		<b>{{ _("Terms and Conditions") }} / الشروط والأحكام</b>
+		<div>{{ doc.terms }}</div>
+	</div>
+	{% endif %}
+
+	{% if doc.remarks %}
+	<p><b>{{ _("Remarks") }} / ملاحظات:</b> {{ doc.remarks }}</p>
+	{% endif %}
+
+	<table class="eh-sign">
+		<tr>
+			<td>
+				{% if doc.employee_signature %}<img src="{{ doc.employee_signature }}" style="height:70px; max-width:240px;">{% endif %}
+				<div class="eh-line">
+					{% if doc.handover_type == "Return" %}{{ _("Returned by (Employee)") }} / المُسلِّم (الموظف){% else %}{{ _("Received by (Employee)") }} / المستلم (الموظف){% endif %}:
+					{{ doc.employee_name }}
+					{% if doc.acknowledged_on %}<br><small>{{ frappe.utils.format_datetime(doc.acknowledged_on) }}</small>{% endif %}
+				</div>
+			</td>
+			<td>
+				<div style="height:70px"></div>
+				<div class="eh-line">
+					{% if doc.handover_type == "Return" %}{{ _("Received by (IT)") }} / المستلم (تقنية المعلومات){% else %}{{ _("Handed over by (IT)") }} / المُسلِّم (تقنية المعلومات){% endif %}:
+					{{ doc.handed_by_name or doc.handed_by or "" }}
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>

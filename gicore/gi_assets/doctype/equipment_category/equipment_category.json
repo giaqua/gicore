@@ -1,14 +1,16 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "field:category_name",
- "creation": "2026-11-16 08:30:00",
+ "creation": "2026-10-19 14:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "category_name",
-  "icon",
-  "disabled",
+  "parent_category",
+  "column_break_1",
+  "tracking_type",
+  "requires_photo_on_return",
+  "section_break_1",
+  "default_accessories",
   "description"
  ],
  "fields": [
@@ -21,15 +23,42 @@
    "in_list_view": 1
   },
   {
-   "fieldname": "icon",
-   "fieldtype": "Data",
-   "label": "Icon (emoji or text)",
-   "description": "Shown on cards, e.g. 💻"
+   "fieldname": "parent_category",
+   "fieldtype": "Link",
+   "label": "Parent Category",
+   "options": "Equipment Category"
   },
   {
-   "fieldname": "disabled",
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tracking_type",
+   "fieldtype": "Select",
+   "label": "Tracking Type",
+   "options": "Serialized\nQuantity",
+   "default": "Serialized",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Serialized: one Equipment record per unit (laptop, phone). Quantity: tracked by count only (mouse, keyboard)."
+  },
+  {
+   "fieldname": "requires_photo_on_return",
    "fieldtype": "Check",
-   "label": "Disabled"
+   "label": "Photo Required on Return",
+   "default": "0"
+  },
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break",
+   "label": "Defaults"
+  },
+  {
+   "fieldname": "default_accessories",
+   "fieldtype": "Small Text",
+   "label": "Default Accessories",
+   "description": "Pre-filled on Issue, e.g. Charger, Bag"
   },
   {
    "fieldname": "description",
@@ -37,44 +66,58 @@
    "label": "Description"
   }
  ],
- "index_web_pages_for_search": 1,
+ "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-11-16 08:30:00",
+ "modified": "2026-10-19 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "GI Assets",
  "name": "Equipment Category",
  "owner": "Administrator",
  "permissions": [
   {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
    "create": 1,
    "delete": 1,
-   "email": 1,
+   "report": 1,
    "export": 1,
    "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
+   "email": 1,
+   "share": 1
   },
   {
+   "role": "Equipment Manager",
+   "read": 1,
+   "write": 1,
    "create": 1,
    "delete": 1,
-   "email": 1,
+   "report": 1,
    "export": 1,
    "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Equipment User",
    "read": 1,
    "report": 1,
+   "print": 1
+  },
+  {
    "role": "HR Manager",
-   "share": 1,
-   "write": 1
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": null,
- "search_fields": "category_name",
- "track_changes": 1
+ "track_changes": 1,
+ "autoname": "field:category_name",
+ "naming_rule": "By fieldname",
+ "search_fields": "tracking_type",
+ "document_type": "Setup"
 }

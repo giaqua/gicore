@@ -51,6 +51,7 @@ def after_migrate():
 
 def ensure_setup():
 	create_roles()
+	backfill_brands_models()
 	create_workflow()
 	create_print_format()
 	create_workspace()
@@ -63,6 +64,32 @@ def create_roles():
 			frappe.get_doc({"doctype": "Role", "role_name": role, "desk_access": 1}).insert(
 				ignore_permissions=True
 			)
+
+
+def backfill_brands_models():
+	"""Equipment.brand / model used to be free text. Create the matching master records so that
+	units saved before the upgrade keep validating. Idempotent: existing records are left alone."""
+	if not (frappe.db.exists("DocType", "Equipment Brand") and frappe.db.exists("DocType", "Equipment Model")):
+		return
+	try:
+		rows = frappe.db.sql(
+			"select distinct brand, model from `tabEquipment` where ifnull(brand, '') != '' or ifnull(model, '') != ''",
+			as_dict=True,
+		)
+	except Exception:
+		return
+
+	for r in rows:
+		brand, model = (r.brand or "").strip(), (r.model or "").strip()
+		try:
+			if brand and not frappe.db.exists("Equipment Brand", brand):
+				frappe.get_doc({"doctype": "Equipment Brand", "brand_name": brand}).insert(ignore_permissions=True)
+			if model and brand and not frappe.db.exists("Equipment Model", model):
+				frappe.get_doc({"doctype": "Equipment Model", "model_name": model, "brand": brand}).insert(
+					ignore_permissions=True
+				)
+		except Exception:
+			frappe.log_error(title="Equipment brand/model backfill failed")
 
 
 def create_workflow():
@@ -170,6 +197,8 @@ def create_workspace():
 			"Masters": [
 				("Equipment", "DocType"),
 				("Equipment Category", "DocType"),
+				("Equipment Brand", "DocType"),
+				("Equipment Model", "DocType"),
 				("Equipment Kit", "DocType"),
 				("Equipment Settings", "DocType"),
 			],

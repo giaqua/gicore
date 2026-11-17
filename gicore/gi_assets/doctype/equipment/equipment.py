@@ -19,6 +19,7 @@ class Equipment(Document):
 		if not self.company:
 			self.company = utils.default_company()
 		self.validate_category()
+		self.validate_model()
 		self.validate_unique_serial()
 		self.validate_linked_asset()
 		self.validate_system_fields()
@@ -41,6 +42,19 @@ class Equipment(Document):
 		before = self.get_doc_before_save()
 		if before and before.category != self.category:
 			frappe.throw(_("Category cannot be changed after the equipment is created."))
+
+	def validate_model(self):
+		if not self.model:
+			return
+		model_brand = frappe.db.get_value("Equipment Model", self.model, "brand")
+		if not self.brand:
+			self.brand = model_brand
+		elif model_brand and model_brand != self.brand:
+			frappe.throw(
+				_("Model {0} belongs to brand {1}, not {2}.").format(
+					frappe.bold(self.model), frappe.bold(model_brand), frappe.bold(self.brand)
+				)
+			)
 
 	def validate_unique_serial(self):
 		if not self.serial_no:
